@@ -40,14 +40,109 @@
       <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
       <field name="state">code</field>
       <field name="code">
-          def print_report():
-            payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
-            if len(payslips) lgt; 0:
-                raise UserError("Batch %s has no payslips" % records[0].x_payroll_batch.name)
-            return env.ref('template.medical_summary_template').report_action(payslips)
-          action = print_report()
+def print_report():
+
+    payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
+    exchange_rate_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "EXCHANGE_RATE")])
+    exchange_rate_rule_value = env['hr.rule.parameter.value'].search([('rule_parameter_id', '=', exchange_rate_rule_parameter.id)], limit=1, order="date_from desc")
+    rate = float(exchange_rate_rule_value.parameter_value)
+    currency = records[0].x_reporting_currency
+
+    if len(payslips) &lt; 0:
+        raise UserError("Batch %s has no payslips" % records[0].x_payroll_batch.name)
+
+    total_basic = 0
+    total_employee_contribution = 0
+    total_employer_contribution = 0
+    total_total_contribution = 0
+    values = []
+
+    for payslip in payslips:
+
+        basic = 0
+        medi_employee = 0
+        medi_company = 0
+        medi_total = 0
+
+        for line in payslip.line_ids:
+            if line.code == 'BASIC' or line.name == 'Basic Salary':
+                if currency == "USD":
+                    basic += line.amount
+                if currency == "ZWL":
+                    basic += ( line.amount * rate )
+            if line.code == 'BASIC_ZWL' or line.name == 'Basic Salary ZWL':
+                if currency == "USD":
+                    basic += ( line.amount / rate )
+                if currency == "ZWL":
+                    basic += line.amount
+
+            if line.code == 'MEDICAL' or line.name == 'Medical Contribution USD':
+                if currency == "USD":
+                    medi_employee += line.amount
+                if currency == "ZWL":
+                    medi_employee += ( line.amount * rate )
+            if line.code == 'MEDICAL_ZWL' or line.name == 'Medical Contribution ZWL':
+                if currency == "USD":
+                    medi_employee += ( line.amount / rate )
+                if currency == "ZWL":
+                    medi_employee += line.amount
+
+            if line.code == 'MEDICAL_CONTRIBUTION' or line.name == 'Medical Contribution Company USD':
+                if currency == "USD":
+                    medi_company += line.amount
+                if currency == "ZWL":
+                    medi_company += ( line.amount * rate )
+            if line.code == 'MEDICAL_CONTRIBUTION_ZWL' or line.name == 'Medical Contribution Company ZWL':
+                if currency == "USD":
+                    medi_company += ( line.amount / rate )
+                if currency == "ZWL":
+                    medi_company += line.amount
+
+
+        total_basic += basic
+        total_employee_contribution += medi_employee
+        total_employer_contribution += medi_company
+        medi_total += medi_employee + medi_company
+        total_total_contribution += medi_total
+
+        value = {
+            "name": payslip.employee_id.name,
+            "date_from": payslip.date_from,
+            "date_to": payslip.date_to,
+            "basic": "%.2f" % basic,
+            "employee": "%.2f" % medi_employee,
+            "employer": "%.2f" % medi_company,
+            "total": "%.2f" % medi_total
+        }
+        values.append(value)
+
+    data = {
+        'total_basic': "%.2f" % total_basic,
+        'total_employee_contribution': "%.2f" % total_employee_contribution,
+        'total_employer_contribution': "%.2f" % total_employer_contribution,
+        'total_total_contribution': "%.2f" % total_total_contribution,
+        'payslips': values
+    }
+
+    return env.ref('template.action_report_medical_summary').report_action(docids=payslips, data=data)
+
+action = print_report()
+
       </field>
     </record>
+
+
+    <!-- report action -->
+    <record id="action_report_medical_summary" model="ir.actions.report">
+        <field name="name">Medical Aid Summary</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.medical_summary_template</field>
+        <field name="report_file">template.medical_summary_template</field>
+        <!--<field name="paperformat_id" ref="base.selection__report_paperformat__format__a4"/>-->
+        <field name="print_report_name">'Medical Aid Summary'</field>
+    </record>
+
 
   </data>
 </odoo>
