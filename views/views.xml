@@ -1,44 +1,33 @@
 <odoo>
   <data>
 
-    <!-- Menu items go here -->
-    <menuitem name="Medical Aid Summary" id="medical_summary_menu" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
-    action="template.action_view_medical_summary"/>
+<!--   THESE ARE THE VIEWS AND ACTIONS FOR MEDICAL AID SUMMARY   -->
 
-    <!-- window actions -->
-    <record id="action_view_medical_summary" model="ir.actions.act_window">
-        <field name="name">Medical Summary</field>
-        <field name="res_model">x_payroll_batch</field>
-        <field name="view_mode">form</field>
-        <field name="target">new</field>
-        <field name="view_id" ref="template.medical_summary_report"/>
-    </record>
+<!-- ************************** FOR MEDICAL AID REPORT ********************************* -->
+        <!-- CHANGE: copy section from **** to end of *** to create new report -->
 
-    <!-- Views Here -->
-     <record model="ir.ui.view" id="medical_summary_report">
-      <field name="name">medical_batch_select_view</field>
-      <field name="model">x_payroll_batch</field>
-      <field name="arch" type="xml">
-        <form string="Select Batch">
-          <sheet>
-            <group col="8">
-              <field name="x_payroll_batch" string="Payslip Batch"/>
-              <field name="x_reporting_currency" string="Reporting Currency"/>
-            </group>
-            <footer>
-              <button name="template.medical_summary_action_server" type="action" string="Print" class="btn-primary"/>
-              <button string="Cancel" special="cancel" class="btn-secondary"/>
-            </footer>
-          </sheet>
-        </form>
-      </field>
+
+    <!-- report action -->
+    <!-- CHANGE: id of this tag and name -->
+    <record id="action_report_medical_summary" model="ir.actions.report">
+        <field name="name">Medical Aid Summary</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.medical_summary_template</field>
+        <field name="report_file">template.medical_summary_template</field>
+        <!-- CHANGE: if you want a specific paper format -->
+        <!--<field name="paperformat_id" ref="base.selection__report_paperformat__format__a4"/>-->
+        <field name="print_report_name">'Medical Aid Summary'</field>
     </record>
 
     <!-- server actions here -->
+    <!-- CHANGE: id of this tag and all reference ids and name -->
     <record model="ir.actions.server" id="medical_summary_action_server">
       <field name="name">Print Medical Aid Summary</field>
       <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
       <field name="state">code</field>
+       <!-- CHANGE: test server action in user interface -->
+       <!-- CHANGE: note docids not working instead get everything you need in data -->
       <field name="code">
 def print_report():
 
@@ -132,17 +121,44 @@ action = print_report()
     </record>
 
 
-    <!-- report action -->
-    <record id="action_report_medical_summary" model="ir.actions.report">
-        <field name="name">Medical Aid Summary</field>
-        <field name="model">hr.payslip</field>
-        <field name="report_type">qweb-pdf</field>
-        <field name="report_name">template.medical_summary_template</field>
-        <field name="report_file">template.medical_summary_template</field>
-        <!--<field name="paperformat_id" ref="base.selection__report_paperformat__format__a4"/>-->
-        <field name="print_report_name">'Medical Aid Summary'</field>
+    <!-- Views Here -->
+    <!-- CHANGE: id of this tag and all reference ids and name -->
+     <record model="ir.ui.view" id="medical_summary_report">
+      <field name="name">medical_batch_select_view</field>
+      <field name="model">x_payroll_batch</field>
+      <field name="arch" type="xml">
+        <form string="Select Batch">
+          <sheet>
+            <group col="8">
+              <field name="x_payroll_batch" string="Payslip Batch"/>
+              <field name="x_reporting_currency" string="Reporting Currency"/>
+            </group>
+            <footer>
+              <button name="template.medical_summary_action_server" type="action" string="Print" class="btn-primary"/>
+              <button string="Cancel" special="cancel" class="btn-secondary"/>
+            </footer>
+          </sheet>
+        </form>
+      </field>
     </record>
 
+    <!-- window actions -->
+    <!-- CHANGE: id of this tag and all reference ids and name -->
+    <record id="action_view_medical_summary" model="ir.actions.act_window">
+        <field name="name">Medical Summary</field>
+        <field name="res_model">x_payroll_batch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="template.medical_summary_report"/>
+    </record>
+
+    <!-- Menu items go here -->
+    <!-- CHANGE: id of this tag and all reference ids and name -->
+    <menuitem name="Medical Aid Summary" id="medical_summary_menu" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
+    action="template.action_view_medical_summary"/>
+
+
+<!-- ************************** END OF MEDICAL AID REPORT ********************************* -->
 
   </data>
 </odoo>
