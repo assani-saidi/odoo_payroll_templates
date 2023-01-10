@@ -1,22 +1,24 @@
 # -*- coding: utf-8 -*-
 {
-    'name': "template",
+    'name': "Calculations",
 
     'summary': """
-        Short (1 phrase/line) summary of the module's purpose, used as
-        subtitle on modules listing or apps.openerp.com""",
+        Update of payroll calculations and functionality
+       """,
 
     'description': """
-        Long description of module's purpose
+       This template seeks to easily rectify some errors in the
+       payroll module associated with calculations by importing
+       csv files on the time of installation.
     """,
 
-    'author': "My Company",
-    'website': "http://www.yourcompany.com",
+    'author': "Rashid Designs",
+    'website': "assanisaidi73@gmail.com",
 
     # Categories can be used to filter modules in modules listing
     # Check https://github.com/odoo/odoo/blob/15.0/odoo/addons/base/data/ir_module_category_data.xml
     # for the full list
-    'category': 'Uncategorized',
+    'category': 'Productivity',
     'version': '0.1',
 
     # any module necessary for this one to work correctly
@@ -24,9 +26,7 @@
 
     # always loaded
     'data': [
-        # 'security/ir.model.access.csv',
-        'views/views.xml',
-        'views/templates.xml',
+        'data/hr.salary.rule.csv',
     ],
     # only loaded in demonstration mode
     'demo': [

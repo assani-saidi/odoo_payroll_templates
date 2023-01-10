@@ -1,0 +1,46 @@
+"id","id","name","code","amount_python_compute"
+"__export__.hr_salary_rule_27_b09cebb3","__export__.hr_salary_rule_27_b09cebb3","PAYE ZWL","PAYE_ZWL","bonus = 0
+if contract.x_studio_allow_bonus and contract.x_studio_currency_1 == ""ZWL"": bonus =  FREE_BNS_ZWL
+wage =  GROSS_ZWL -  bonus 
+wage += categories.ALW_DEDUCTION_ZWL 
+
+amount = 0
+if( wage >= payslip.rule_parameter(""PAYEB1ZWL"") and  wage < payslip.rule_parameter(""PAYEB2ZWL"")):
+    amount =   ( 0.2 * wage ) - payslip.rule_parameter(""PAYEV1ZWL"")
+elif( wage >= payslip.rule_parameter(""PAYEB2ZWL"") and  wage < payslip.rule_parameter(""PAYEB3ZWL"")):
+    amount =  ( 0.25 * wage ) - payslip.rule_parameter(""PAYEV2ZWL"")
+elif( wage >= payslip.rule_parameter(""PAYEB3ZWL"") and wage < payslip.rule_parameter(""PAYEB4ZWL"")):
+    amount =  ( 0.3 * wage ) - payslip.rule_parameter(""PAYEV3ZWL"")
+elif( wage >= payslip.rule_parameter(""PAYEB4ZWL"") and wage < payslip.rule_parameter(""PAYEB5ZWL"")):
+    amount =  ( 0.35 * wage ) - payslip.rule_parameter(""PAYEV4ZWL"")
+elif( wage >= payslip.rule_parameter(""PAYEB5ZWL"")):
+    amount =  ( 0.4 * wage ) - payslip.rule_parameter(""PAYEV5ZWL"")
+
+
+if( amount > 0 and employee.x_studio_eligible_for_credit_deduction):
+    credits = CREDITS_ZWL
+    txn = categories.TXN_DED_ZWL
+    if credits > amount: amount = 0
+    else: amount = amount - txn
+
+employer_contribution = ( contract.x_studio_company_contribution_1 / 100 ) *  contract.x_studio_monthly_contribution_zwl_1
+contribution = contract.x_studio_monthly_contribution_zwl_1
+take = contribution - employer_contribution
+take = take
+medical_expense = contract.x_studio_medical_aid_expense_zwl
+
+if employee.x_studio_calculate_medical_aid: amount -= ( 0.5 * medical_expense )
+if employee.x_studio_calculate_medical_aid: amount -= ( 0.5 * take )
+
+if BASIC > 0 and BASIC_ZWL > 0:
+    # we apportion here
+    basic_usd = BASIC
+    basic_zwl = BASIC_ZWL / payslip.rule_parameter(""EXCHANGE_RATE"")
+    total_usd = basic_usd + basic_zwl
+
+    paye_usd = ( basic_usd / total_usd ) * PAYE_CALC
+    paye_zwl = ( basic_zwl / total_usd ) * PAYE_CALC
+    paye_zwl = paye_zwl * payslip.rule_parameter(""EXCHANGE_RATE"")
+    result = -paye_zwl 
+
+else: result = -amount "
