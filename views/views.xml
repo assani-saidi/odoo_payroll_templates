@@ -1,0 +1,2037 @@
+<odoo>
+  <data>
+<!-- Menu item -> window action -> view action -> server action -> report action -> template -->
+
+<!-- Paper Format -->
+    <!-- <record id="paper_format_payroll_reports" model="report.paperformat">
+        <field name="field_name">Payroll Custom A4 Paper Format</field>
+        <field name="format">A4</field>
+        <field name="orientation">Landscape</field>
+        <field name="page_height">0</field>
+        <field name="page_width">0</field>
+        <field name="margin_top">5</field>
+        <field name="margin_bottom">5</field>
+        <field name="margin_right">5</field>
+        <field name="margin_left">5</field>
+        <field name="header_spacing">35</field>
+        <field name="dip">90</field>
+    </record> -->
+
+<!--   THESE ARE THE VIEWS AND ACTIONS FOR MEDICAL AID SUMMARY   -->
+
+    <!-- report action -->
+    <record id="action_report_medical_summary" model="ir.actions.report">
+        <field name="name">Medical Aid Summary</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.medical_summary_template</field>
+        <field name="report_file">template.medical_summary_template</field>
+        <!--<field name="paperformat_id" ref="base.selection__report_paperformat__format__a4"/>-->
+        <field name="print_report_name">'Medical Aid Summary'</field>
+    </record>
+
+    <!-- server actions here -->
+    <record model="ir.actions.server" id="medical_summary_action_server">
+      <field name="name">Print Medical Aid Summary</field>
+      <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
+      <field name="state">code</field>
+      <field name="code">
+def print_report():
+
+    payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
+    exchange_rate_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "EXCHANGE_RATE")])
+    exchange_rate_rule_value = env['hr.rule.parameter.value'].search([('rule_parameter_id', '=', exchange_rate_rule_parameter.id)], limit=1, order="date_from desc")
+    rate = float(exchange_rate_rule_value.parameter_value)
+    currency = records[0].x_reporting_currency
+
+    if len(payslips) &lt; 0:
+        raise UserError("Batch %s has no payslips" % records[0].x_payroll_batch.name)
+
+    total_basic = 0
+    total_employee_contribution = 0
+    total_employer_contribution = 0
+    total_total_contribution = 0
+    values = []
+
+    for payslip in payslips:
+
+        basic = 0
+        medi_employee = 0
+        medi_company = 0
+        medi_total = 0
+
+        for line in payslip.line_ids:
+            if line.code == 'BASIC' or line.name == 'Basic Salary':
+                if currency == "USD":
+                    basic += line.amount
+                if currency == "ZWL":
+                    basic += ( line.amount * rate )
+            if line.code == 'BASIC_ZWL' or line.name == 'Basic Salary ZWL':
+                if currency == "USD":
+                    basic += ( line.amount / rate )
+                if currency == "ZWL":
+                    basic += line.amount
+
+            if line.code == 'MEDICAL' or line.name == 'Medical Contribution USD':
+                if currency == "USD":
+                    medi_employee += line.amount
+                if currency == "ZWL":
+                    medi_employee += ( line.amount * rate )
+            if line.code == 'MEDICAL_ZWL' or line.name == 'Medical Contribution ZWL':
+                if currency == "USD":
+                    medi_employee += ( line.amount / rate )
+                if currency == "ZWL":
+                    medi_employee += line.amount
+
+            if line.code == 'MEDICAL_CONTRIBUTION' or line.name == 'Medical Contribution Company USD':
+                if currency == "USD":
+                    medi_company += line.amount
+                if currency == "ZWL":
+                    medi_company += ( line.amount * rate )
+            if line.code == 'MEDICAL_CONTRIBUTION_ZWL' or line.name == 'Medical Contribution Company ZWL':
+                if currency == "USD":
+                    medi_company += ( line.amount / rate )
+                if currency == "ZWL":
+                    medi_company += line.amount
+
+
+        total_basic += basic
+        total_employee_contribution += medi_employee
+        total_employer_contribution += medi_company
+        medi_total += medi_employee + medi_company
+        total_total_contribution += medi_total
+
+        value = {
+            "name": payslip.employee_id.name,
+            "date_from": payslip.date_from,
+            "date_to": payslip.date_to,
+            "basic": "%.2f" % basic,
+            "employee": "%.2f" % medi_employee,
+            "employer": "%.2f" % medi_company,
+            "total": "%.2f" % medi_total
+        }
+        values.append(value)
+
+    data = {
+        'total_basic': "%.2f" % total_basic,
+        'total_employee_contribution': "%.2f" % total_employee_contribution,
+        'total_employer_contribution': "%.2f" % total_employer_contribution,
+        'total_total_contribution': "%.2f" % total_total_contribution,
+        'payslips': values
+    }
+
+    return env.ref('template.action_report_medical_summary').report_action(docids=payslips, data=data)
+
+action = print_report()
+
+      </field>
+    </record>
+
+
+    <!-- Views Here -->
+     <record model="ir.ui.view" id="medical_summary_report">
+      <field name="name">medical_batch_select_view</field>
+      <field name="model">x_payroll_batch</field>
+      <field name="arch" type="xml">
+        <form string="Select Batch">
+          <sheet>
+            <group col="8">
+              <field name="x_payroll_batch" string="Payslip Batch"/>
+              <field name="x_reporting_currency" string="Reporting Currency"/>
+            </group>
+            <footer>
+              <button name="template.medical_summary_action_server" type="action" string="Print" class="btn-primary"/>
+              <button string="Cancel" special="cancel" class="btn-secondary"/>
+            </footer>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <!-- window actions -->
+    <record id="action_view_medical_summary" model="ir.actions.act_window">
+        <field name="name">Medical Summary</field>
+        <field name="res_model">x_payroll_batch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="template.medical_summary_report"/>
+    </record>
+
+    <!-- Menu items go here -->
+    <menuitem name="Medical Aid Summary" id="medical_summary_menu" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
+    action="template.action_view_medical_summary"/>
+
+    
+
+    <!-- ************************** END OF Medical Aid Summary ********************************* -->
+
+
+
+
+    <!-- ************************** FOR PENSION REPORT ********************************* -->
+        <!-- CHANGE: copy section from **** to end of *** to create new report -->
+
+
+    <!-- report action -->
+    <!-- CHANGE: id of this tag and name -->
+    <record id="action_report_pension_report" model="ir.actions.report">
+        <field name="name">Pension Report</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.pension_report_template</field>
+        <field name="report_file">template.pension_report_template</field>
+        <!-- CHANGE: if you want a specific paper format -->
+        <!--<field name="paperformat_id" ref="base.selection__report_paperformat__format__a4"/>-->
+        <field name="print_report_name">'Pension Report'</field>
+    </record>
+
+    <!-- server actions here -->
+    <!-- CHANGE: id of this tag and all reference ids and name -->
+    <record model="ir.actions.server" id="pension_report_action_server">
+      <field name="name">Print Pension Report</field>
+      <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
+      <field name="state">code</field>
+       <!-- CHANGE: test server action in user interface -->
+       <!-- CHANGE: note docids not working instead get everything you need in data -->
+      <field name="code">
+
+def print_report():
+    payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
+    exchange_rate_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "EXCHANGE_RATE")])
+    exchange_rate_rule_value = env['hr.rule.parameter.value'].search([('rule_parameter_id', '=', exchange_rate_rule_parameter.id)], limit=1, order="date_from desc")
+    rate = float(exchange_rate_rule_value.parameter_value)
+    currency = records[0].x_reporting_currency
+
+    if len(payslips) &lt; 0:
+        raise UserError("Batch %s has no payslips" % records[0].x_payroll_batch.name)
+
+    total_basic = 0
+    total_employee_contribution = 0
+    total_employer_contribution = 0
+    total_total_contribution = 0
+
+    # grade container
+    grade_entry = {}
+
+    grades = []
+
+    for payslip in payslips:
+        
+        
+        if payslip.employee_id.x_studio_grade:
+            grade = payslip.employee_id.x_studio_grade
+        else:
+            grade = "N/A"
+        
+        grade_entry.setdefault(grade, [])
+        
+        basic = 0
+        pen_employee = 0
+        pen_company = 0
+        pen_total = 0
+
+        for line in payslip.line_ids:
+            if line.code == 'BASIC' or line.name == 'Basic Salary':
+                if currency == "USD":
+                    basic += line.amount
+                if currency == "ZWL":
+                    basic += ( line.amount * rate )
+            if line.code == 'BASIC_ZWL' or line.name == 'Basic Salary ZWL':
+                if currency == "USD":
+                    basic += ( line.amount / rate )
+                if currency == "ZWL":
+                    basic += line.amount
+
+            if line.code == 'PENS' or line.name == 'Pension USD':
+                if currency == "USD":
+                    pen_employee += line.amount
+                if currency == "ZWL":
+                    pen_employee += ( line.amount * rate )
+            if line.code == 'PENS_ZWL' or line.name == 'Pension ZWL':
+                if currency == "USD":
+                    pen_employee += ( line.amount / rate )
+                if currency == "ZWL":
+                    pen_employee += line.amount
+
+            if line.code == 'PENSION_CONTRIBUTION' or line.name == 'Pension Contribution Company USD':
+                if currency == "USD":
+                    pen_company += line.amount
+                if currency == "ZWL":
+                    pen_company += ( line.amount * rate )
+            if line.code == 'PENSION_CONTRIBUTION_ZWL' or line.name == 'Pension Contribution Company ZWL':
+                if currency == "USD":
+                    pen_company += ( line.amount / rate )
+                if currency == "ZWL":
+                    pen_company += line.amount
+
+
+        total_basic += basic
+        total_employee_contribution += pen_employee
+        total_employer_contribution += pen_company
+        pen_total += pen_employee + pen_company
+        total_total_contribution += pen_total
+
+        value = {
+            "name": payslip.employee_id.name,
+            "date_from": payslip.date_from,
+            "date_to": payslip.date_to,
+            "basic": "%.2f" % basic,
+            "employee": "%.2f" % pen_employee,
+            "employer": "%.2f" % pen_company,
+            "total": "%.2f" % pen_total
+        }
+        
+        
+        # we get the grade groups
+        if grade not in grades:
+            grades.append(grade)
+            grade_entry[grade].append(value)
+        else:
+            grade_entry[grade].append(value)
+            
+    data = {
+        'grades': grades,
+        'total_basic': "%.2f" % total_basic,
+        'total_employee_contribution': "%.2f" % total_employee_contribution,
+        'total_employer_contribution': "%.2f" % total_employer_contribution,
+        'total_total_contribution': "%.2f" % total_total_contribution,
+        'payslips': grade_entry
+    }
+
+    return env.ref('template.action_report_pension_report').report_action(docids=payslips, data=data)
+
+action = print_report()
+
+      </field>
+    </record>
+
+
+    <!-- Views Here -->
+    <!-- CHANGE: id of this tag and all reference ids and name -->
+     <record model="ir.ui.view" id="pension_report">
+      <field name="name">pension_batch_select_view</field>
+      <field name="model">x_payroll_batch</field>
+      <field name="arch" type="xml">
+        <form string="Select Batch">
+          <sheet>
+            <group col="8">
+              <field name="x_payroll_batch" string="Payslip Batch"/>
+              <field name="x_reporting_currency" string="Reporting Currency"/>
+            </group>
+            <footer>
+              <button name="template.pension_report_action_server" type="action" string="Print" class="btn-primary"/>
+              <button string="Cancel" special="cancel" class="btn-secondary"/>
+            </footer>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <!-- window actions -->
+    <!-- CHANGE: id of this tag and all reference ids and name -->
+    <record id="action_view_pension_report" model="ir.actions.act_window">
+        <field name="name">Pension Report</field>
+        <field name="res_model">x_payroll_batch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="template.pension_report"/>
+    </record>
+
+    <!-- Menu items go here -->
+    <!-- CHANGE: id of this tag and all reference ids and name -->
+    <menuitem name="Pension Report" id="pension_report_menu" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
+    action="template.action_view_pension_report"/>
+
+
+<!-- ************************** END OF PENSION REPORT ********************************* -->
+
+    <!--   THESE ARE THE VIEWS AND ACTIONS FOR ZIMDEF Report -->
+
+    <!-- report action -->
+    <record id="action_report_zimdef_report" model="ir.actions.report">
+        <field name="name">ZIMDEF Report</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.zimdef_report_template</field>
+        <field name="report_file">template.zimdef_report_template</field>
+        <!--<field name="paperformat_id" ref="base.selection__report_paperformat__format__a4"/>-->
+        <field name="print_report_name">'ZIMDEF Report'</field>
+    </record>
+
+    <!-- server actions here -->
+    <record model="ir.actions.server" id="zimdef_report_action_server">
+      <field name="name">Print ZIMDEF Report</field>
+      <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
+      <field name="state">code</field>
+      <field name="code">
+def print_report():
+
+    payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
+    exchange_rate_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "EXCHANGE_RATE")])
+    exchange_rate_rule_value = env['hr.rule.parameter.value'].search([('rule_parameter_id', '=', exchange_rate_rule_parameter.id)], limit=1, order="date_from desc")
+    rate = float(exchange_rate_rule_value.parameter_value)
+    currency = records[0].x_reporting_currency
+
+    if len(payslips) &lt; 0:
+        raise UserError("Batch %s has no payslips" % records[0].x_payroll_batch.name)
+
+    total_basic = 0
+    total_gross = 0
+    total_employee_contribution = 0
+    total_employer_contribution = 0
+    total_total_contribution = 0
+    values = []
+
+    for payslip in payslips:
+
+        basic = 0
+        gross = 0
+        zimdef_employer = 0
+        
+        for line in payslip.line_ids:
+            if line.code == 'BASIC' or line.name == 'Basic Salary':
+                if currency == "USD":
+                    basic += line.amount
+                if currency == "ZWL":
+                    basic += ( line.amount * rate )
+            if line.code == 'BASIC_ZWL' or line.name == 'Basic Salary ZWL':
+                if currency == "USD":
+                    basic += ( line.amount / rate )
+                if currency == "ZWL":
+                    basic += line.amount
+
+            if line.code == 'GROSS' or line.name == 'Basic Salary':
+                if currency == "USD":
+                    basic += line.amount
+                if currency == "ZWL":
+                    basic += ( line.amount * rate )
+            if line.code == 'GROSS_ZWL' or line.name == 'GROSS ZWL':
+                if currency == "USD":
+                    basic += ( line.amount / rate )
+                if currency == "ZWL":
+                    basic += line.amount
+
+            if line.code == 'ZIMDEF' or line.name == 'ZIMDEF USD':
+                if currency == "USD":
+                    zimdef_employer += line.amount
+                if currency == "ZWL":
+                    zimdef_employer += ( line.amount * rate )
+            if line.code == 'ZIMDEF_ZWL' or line.name == 'ZIMDEF ZWL':
+                if currency == "USD":
+                    zimdef_employer += ( line.amount / rate )
+                if currency == "ZWL":
+                    zimdef_employer += line.amount
+
+
+        total_basic += basic
+        total_gross += gross
+        total_employer_contribution += zimdef_employer
+
+        value = {
+            "name": payslip.employee_id.name,
+            "date_from": payslip.date_from,
+            "date_to": payslip.date_to,
+            "basic": "%.2f" % basic,
+            "gross": "%.2f" % gross,
+            "employer": "%.2f" % zimdef_employer,
+        }
+        values.append(value)
+
+    data = {
+        'total_basic': "%.2f" % total_basic,
+        'total_gross': "%.2f" % total_gross,
+        'total_employer_contribution': "%.2f" % total_employer_contribution,
+        'payslips': values
+    }
+
+    return env.ref('template.action_report_zimdef_report').report_action(docids=payslips, data=data)
+
+action = print_report()
+    
+      </field>
+    </record>
+
+
+    <!-- Views Here -->
+     <record model="ir.ui.view" id="zimdef_report">
+      <field name="name">zimdef_batch_select_view</field>
+      <field name="model">x_payroll_batch</field>
+      <field name="arch" type="xml">
+        <form string="Select Batch">
+          <sheet>
+            <group col="8">
+              <field name="x_payroll_batch" string="Payslip Batch"/>
+              <field name="x_reporting_currency" string="Reporting Currency"/>
+            </group>
+            <footer>
+              <button name="template.zimdef_report_action_server" type="action" string="Print" class="btn-primary"/>
+              <button string="Cancel" special="cancel" class="btn-secondary"/>
+            </footer>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <!-- window actions -->
+    <record id="action_view_zimdef_report" model="ir.actions.act_window">
+        <field name="name">ZIMDEF Report</field>
+        <field name="res_model">x_payroll_batch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="template.zimdef_report"/>
+    </record>
+
+    <!-- Menu items go here -->
+    <menuitem name="ZIMDEF Report" id="zimdef_report_menu" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
+    action="template.action_view_zimdef_report"/>
+
+<!-- ************************** END OF ZIMDEF REPORT ********************************* -->
+
+    <!--   THESE ARE THE VIEWS AND ACTIONS FOR Tax Credit Summary -->
+
+    <!-- report action -->
+    <record id="action_report_tax_credit_summary" model="ir.actions.report">
+        <field name="name">Tax Credit Summary</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.tax_credit_summary_template</field>
+        <field name="report_file">template.tax_credit_summary_template</field>
+        <!--<field name="paperformat_id" ref="base.selection__report_paperformat__format__a4"/>-->
+        <field name="print_report_name">'Tax Credit Summary'</field>
+    </record>
+
+    <!-- server actions here -->
+    <record model="ir.actions.server" id="tax_credit_summary_action_server">
+      <field name="name">Print Tax Credit Summary</field>
+      <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
+      <field name="state">code</field>
+      <field name="code">
+def calculate_Age(birthDate):
+    today = datetime.date.today()
+    age = today.year - birthDate.year
+    if age &gt; 74:
+        return True
+    else:
+        return False
+    
+def print_report():
+
+    payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
+    exchange_rate_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "EXCHANGE_RATE")])
+    exchange_rate_rule_value = env['hr.rule.parameter.value'].search([('rule_parameter_id', '=', exchange_rate_rule_parameter.id)], limit=1, order="date_from desc")
+    rate = float(exchange_rate_rule_value.parameter_value)
+    currency = records[0].x_reporting_currency
+
+    if len(payslips) &lt; 0:
+        raise UserError("Batch %s has no payslips" % records[0].x_payroll_batch.name)
+
+    total_opening = 0
+    total_elderly = 0
+    total_disabled = 0
+    total_blind = 0
+    total_medical = 0
+    total_row = 0
+    grand_total = 0
+    total_closing = 0
+    
+    values = []
+
+    for payslip in payslips:
+
+        opening_bal = 0
+        elderly_credits = 0
+        disabled_credits = 0
+        blind_credits = 0
+        medical_credits = 0
+        closing_bal = 0
+        
+        paye_usd = 0
+        paye_zwl = 0
+        
+        if calculate_Age(payslip.employee_id.birthday):
+            if currency == "USD":
+                elderly_credits = payslip.employee_id.x_studio_tax_credit_amount
+            if currency == "ZWL":
+                elderly_credits = payslip.employee_id.x_studio_tax_credit_amount_zwl 
+                
+        if payslip.employee_id.x_studio_eligible_for_credit_deduction:
+            if payslip.employee_id.x_studio_credit_type == "Disabled Persons":
+                if currency == "USD":
+                    elderly_credits = payslip.employee_id.x_studio_tax_credit_amount
+                if currency == "ZWL":
+                    elderly_credits = payslip.employee_id.x_studio_tax_credit_amount_zwl             
+            
+            if payslip.employee_id.x_studio_credit_type == "Blind Persons":
+                if currency == "USD":
+                    elderly_credits = payslip.employee_id.x_studio_tax_credit_amount
+                if currency == "ZWL":
+                    elderly_credits = payslip.employee_id.x_studio_tax_credit_amount_zwl 
+                    
+        for line in payslip.line_ids:
+            # Note some line_ids may be negative e.g PAYE
+            if line.code == 'MEDICAL' or line.name == 'Medical Contribution USD':
+                if currency == "USD":
+                    medical_credits += - ( line.amount ) / 2
+                if currency == "ZWL":
+                    medical_credits += - ( line.amount * rate ) / 2
+            if line.code == 'MEDICAL_ZWL' or line.name == 'Medical Contribution ZWL':
+                if currency == "USD":
+                    medical_credits += - ( line.amount / rate ) / 2
+                if currency == "ZWL":
+                    medical_credits += -(line.amount) / 2
+
+            if line.code == 'PAYE' or line.name == 'PAYE USD':
+                if currency == "USD":
+                    paye_usd += -( line.amount)
+                if currency == "ZWL":
+                    paye_usd += - ( line.amount * rate )
+            if line.code == 'PAYE_ZWL' or line.name == 'PAYE ZWL':
+                if currency == "USD":
+                    paye_zwl +=  - ( line.amount / rate )
+                if currency == "ZWL":
+                    paye_zwl += - (line.amount)
+        
+        # Total for each employee
+        total_row = opening_bal + elderly_credits + disabled_credits + blind_credits + medical_credits
+
+        if currency == "USD":
+            if (total_row - paye_usd) > 0:
+                closing_bal = total_row - paye_usd
+            
+        if  currency == "ZWL":
+            if (total_row - paye_zwl) > 0:
+                closing_bal = total_row - paye_zwl
+        
+        total_opening += opening_bal
+        total_elderly += elderly_credits
+        total_disabled += disabled_credits
+        total_blind += blind_credits
+        total_medical += medical_credits
+        grand_total += total_row
+        total_closing += closing_bal
+        
+        value = {
+            "name": payslip.employee_id.name,
+            "date_from": payslip.date_from,
+            "date_to": payslip.date_to,
+            "opening": opening_bal,
+            "elderly": elderly_credits,
+            "disabled": disabled_credits,
+            "blind": blind_credits,
+            "medical": medical_credits,
+            "total_row": total_row,
+            "closing_bal": closing_bal
+            
+        }
+        values.append(value)
+        
+    data = {
+        'grand_total': grand_total,
+        'total_opening': total_opening,
+        'total_elderly': total_elderly, 
+        'total_disabled': total_disabled,
+        'total_blind':  total_blind,
+        'total_medical': total_medical,
+        'total_closing': total_closing, 
+        'payslips': values
+    }
+
+    return env.ref('template.action_report_tax_credit_summary').report_action(docids=payslips, data=data)
+
+action = print_report()
+
+        
+      </field>
+    </record>
+
+
+    <!-- Views Here -->
+     <record model="ir.ui.view" id="tax_credit_summary">
+      <field name="name">tax_credit_summary_batch_select_view</field>
+      <field name="model">x_payroll_batch</field>
+      <field name="arch" type="xml">
+        <form string="Select Batch">
+          <sheet>
+            <group col="8">
+              <field name="x_payroll_batch" string="Payslip Batch"/>
+              <field name="x_reporting_currency" string="Reporting Currency"/>
+            </group>
+            <footer>
+              <button name="template.tax_credit_summary_action_server" type="action" string="Print" class="btn-primary"/>
+              <button string="Cancel" special="cancel" class="btn-secondary"/>
+            </footer>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <!-- window actions -->
+    <record id="action_view_tax_credit_summary" model="ir.actions.act_window">
+        <field name="name">Tax Credit Summary</field>
+        <field name="res_model">x_payroll_batch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="template.tax_credit_summary"/>
+    </record>
+
+    <!-- Menu items go here -->
+    <menuitem name="Tax Credit Summary" id="tax_credit_summary_menu" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
+    action="template.action_view_tax_credit_summary"/>
+
+<!-- ************************** END OF Tax Credit Summary ********************************* -->
+
+
+<!--   THESE ARE THE VIEWS AND ACTIONS FOR Categorised Period Summaries By Department -->
+
+    <!-- report action -->
+    <record id="action_report_period_summary_by_dept" model="ir.actions.report">
+        <field name="name">Categorised Period Summary by Department</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.period_summary_by_dept_template</field>
+        <field name="report_file">template.period_summary_by_dept_template</field>
+        <!--<field name="paperformat_id" ref="base.selection__report_paperformat__format__a4"/>-->
+        <field name="print_report_name">'Categorised Period Summary by Department'</field>
+    </record>
+
+    <!-- server actions here -->
+    <record model="ir.actions.server" id="period_summary_by_dept_action_server">
+      <field name="name">Print Categorised Period Summary by Department</field>
+      <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
+      <field name="state">code</field>
+      <field name="code">
+
+def print_report():
+
+    payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
+    exchange_rate_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "EXCHANGE_RATE")])
+    exchange_rate_rule_value = env['hr.rule.parameter.value'].search([('rule_parameter_id', '=', exchange_rate_rule_parameter.id)], limit=1, order="date_from desc")
+    rate = float(exchange_rate_rule_value.parameter_value)
+    currency = records[0].x_reporting_currency
+
+    if len(payslips) &lt; 0:
+        raise UserError("Batch %s has no payslips" % records[0].x_payroll_batch.name)
+
+    total_basic = 0
+    total_gross = 0
+    total_bonus = 0
+    total_allowances = 0
+    total_nssa = 0
+    total_medical = 0
+    total_pension = 0
+    total_nec = 0
+    total_deductions = 0
+    total_paye = 0
+    total_aids_levy = 0
+    total_net_pay = 0
+    total_leave = 0
+
+    departments = []
+    department_group = {}
+
+    for payslip in payslips:
+        if payslip.department_id.name:
+            department = payslip.department_id.name
+        else:
+            department = "N/A"
+            
+        departments.append(department)
+        department_group.setdefault(department, [])
+        
+        if payslip.employee_id.x_studio_grade:
+            grade = payslip.employee_id.x_studio_grade
+        else:
+            grade = "N/A"
+        
+        basic = 0
+        gross = 0
+        bonus = 0
+        allowances = 0
+        leave_days = 0
+        nssa_nps = 0
+        medical = 0
+        pension = 0
+        nec = 0
+        deductions = 0
+        paye = 0
+        aids_levy = 0
+        net_pay = 0
+        days_taken = 0
+        
+        
+        for line in payslip.employee_id.x_hr_employee_line_ids_c6dc1:
+            if line.x_studio_days_taken:
+                days_taken += line.x_studio_days_taken
+        
+        for line in payslip.line_ids:
+            if line.code == 'BASIC' or line.name == 'Basic Salary':
+                if currency == "USD":
+                    basic += line.amount
+                if currency == "ZWL":
+                    basic += ( line.amount * rate )
+            if line.code == 'BASIC_ZWL' or line.name == 'Basic Salary ZWL':
+                if currency == "USD":
+                    basic += ( line.amount / rate )
+                if currency == "ZWL":
+                    basic += line.amount
+
+                    
+            if line.code == 'GROSS' or line.name == 'GROSS USD':
+                if currency == "USD":
+                    gross += line.amount
+                if currency == "ZWL":
+                    gross += ( line.amount * rate )
+            if line.code == 'GROSS_ZWL' or line.name == 'GROSS ZWL':
+                if currency == "USD":
+                    gross += ( line.amount / rate )
+                if currency == "ZWL":
+                    gross += line.amount
+                    
+            if line.code == 'NSSANPS' or line.name == 'NSSA NPS USD':
+                if currency == "USD":
+                    nssa_nps += -(line.amount)
+                if currency == "ZWL":
+                    nssa_nps += - ( line.amount * rate )
+            if line.code == 'NSSANPS_ZWL' or line.name == 'NSSA NPS ZWL':
+                if currency == "USD":
+                    nssa_nps += - ( line.amount / rate )
+                if currency == "ZWL":
+                    nssa_nps += - (line.amount)                            
+
+            if line.code == 'MEDICAL' or line.name == 'Medical Contribution USD':
+                if currency == "USD":
+                    medical += - (line.amount)
+                if currency == "ZWL":
+                    medical += - ( line.amount * rate )
+            if line.code == 'MEDICAL_ZWL' or line.name == 'Medical Contribution ZWL':
+                if currency == "USD":
+                    medical += - ( line.amount / rate )
+                if currency == "ZWL":
+                    medical += - (line.amount)
+
+            if line.code == 'PENS' or line.name == 'Pension USD':
+                if currency == "USD":
+                    pension += - (line.amount)
+                if currency == "ZWL":
+                    pension += - ( line.amount * rate )
+            if line.code == 'PENS_ZWL' or line.name == 'Pension ZWL':
+                if currency == "USD":
+                    pension += - ( line.amount / rate )
+                if currency == "ZWL":
+                    pension += - (line.amount)
+
+            if line.code == 'NEC_EMPLOYEE' or line.name == 'Nec Employee USD':
+                if currency == "USD":
+                    nec += - (line.amount)
+                if currency == "ZWL":
+                    nec += - ( line.amount * rate )
+            if line.code == 'NEC_EMPLOYEE_ZWL' or line.name == 'Nec Employee ZWL':
+                if currency == "USD":
+                    nec += - ( line.amount / rate )
+                if currency == "ZWL":
+                    nec += - (line.amount)
+                    
+            if line.category_id.code == 'DED' or line.category_id.name == 'Deduction':
+                if currency == "USD":
+                    deductions += - (line.amount)
+                if currency == "ZWL":
+                    deductions += - ( line.amount * rate )
+            if line.category_id.code == 'DEDUCTION_ZWL' or line.category_id.name == 'Deduction ZWL':
+                if currency == "USD":
+                    deductions += - ( line.amount / rate )
+                if currency == "ZWL":
+                    deductions += - (line.amount)
+                    
+            if line.category_id.code == 'ALW' or line.category_id.name == 'Allowance':
+                if currency == "USD":
+                    allowances += (line.amount)
+                if currency == "ZWL":
+                    allowances += ( line.amount * rate )
+            if line.category_id.code == 'ALW_ZWL' or line.category_id.name == 'Allowance ZWL':
+                if currency == "USD":
+                    allowances += ( line.amount / rate )
+                if currency == "ZWL":
+                    allowances += (line.amount)
+
+            if line.code == 'PAYE' or line.name == 'PAYE USD':
+                if currency == "USD":
+                    paye += - (line.amount)
+                if currency == "ZWL":
+                    paye += - ( line.amount * rate )
+            if line.code == 'PAYE_ZWL' or line.name == 'PAYE ZWL':
+                if currency == "USD":
+                    paye += - ( line.amount / rate )
+                if currency == "ZWL":
+                    paye += - (line.amount)
+                    
+            if line.code == 'AIDS' or line.name == 'AIDS LEVY USD':
+                if currency == "USD":
+                    aids_levy += - (line.amount)
+                if currency == "ZWL":
+                    aids_levy += - ( line.amount * rate )
+            if line.code == 'AIDS_ZWL' or line.name == 'AIDS LEVY ZWL':
+                if currency == "USD":
+                    aids_levy += - ( line.amount / rate )
+                if currency == "ZWL":
+                    aids_levy += - (line.amount)                    
+        
+            if line.code == 'NET' or line.name == 'Net Salary USD':
+                if currency == "USD":
+                    net_pay += line.amount
+                if currency == "ZWL":
+                    net_pay += ( line.amount * rate )
+            if line.code == 'NET_ZWL' or line.name == 'Net Salary ZWL':
+                if currency == "USD":
+                    net_pay += ( line.amount / rate )
+                if currency == "ZWL":
+                    net_pay += line.amount                    
+        
+
+        total_basic += basic
+        total_gross += gross
+        total_bonus += bonus
+        total_allowances += allowances
+        total_nssa += nssa_nps
+        total_medical += medical
+        total_pension += pension
+        total_nec += nec
+        total_deductions += deductions
+        total_paye += paye
+        total_aids_levy += aids_levy
+        total_net_pay += net_pay
+        total_leave += days_taken
+
+        value = {
+            "name": payslip.employee_id.name,
+            "grade": grade,
+            "days_taken": days_taken,
+            "basic": basic,
+            "gross": gross,
+            "bonus": bonus,
+            "allowances": allowances,
+            "nssa": nssa_nps,
+            "medicals": medical,
+            "pension": pension,
+            "nec": nec,
+            "deductions": deductions,
+            "paye": paye,
+            "aids_levy": aids_levy,
+            "net_pay": net_pay,
+            "date_from": payslip.date_from,
+            "date_to": payslip.date_to
+        }
+        
+        
+        # we get the grade groups
+        if department not in departments:
+            departments.append(department)
+            department_group[department].append(value)
+        else:
+            department_group[department].append(value)
+            
+    data = {
+        'departments': departments,
+        'total_basic': "%.2f" % total_basic,
+        'total_gross': "%.2f" % total_gross,
+        'total_bonus': "%.2f" % total_bonus,
+        'total_leave': total_leave,
+        'total_benefits': "%.2f" % total_allowances,
+        'total_nssa': "%.2f" % total_nssa,
+        'total_medical': "%.2f" % total_medical,
+        'total_pension': "%.2f" % total_pension,
+        'total_nec': "%.2f" % total_nec,
+        'total_deductions': "%.2f" % total_deductions,
+        'total_paye': "%.2f" % total_paye,
+        'total_aids_levy': "%.2f" % total_aids_levy,
+        'total_net_pay': "%.2f" % total_net_pay,
+        'payslips': department_group
+    }
+    return env.ref('template.action_report_period_summary_by_dept').report_action(docids=payslips, data=data)
+action = print_report()
+
+    
+
+      </field>
+    </record>
+
+
+    <!-- Views Here -->
+     <record model="ir.ui.view" id="period_summary_by_dept_report">
+      <field name="name">period_summary_by_dept_batch_select_view</field>
+      <field name="model">x_payroll_batch</field>
+      <field name="arch" type="xml">
+        <form string="Select Batch">
+          <sheet>
+            <group col="8">
+              <field name="x_payroll_batch" string="Payslip Batch"/>
+              <field name="x_reporting_currency" string="Reporting Currency"/>
+            </group>
+            <footer>
+              <button name="template.period_summary_by_dept_action_server" type="action" string="Print" class="btn-primary"/>
+              <button string="Cancel" special="cancel" class="btn-secondary"/>
+            </footer>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <!-- window actions -->
+    <record id="action_view_period_summary_by_dept" model="ir.actions.act_window">
+        <field name="name">Categorised Period Summary by Department</field>
+        <field name="res_model">x_payroll_batch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="template.period_summary_by_dept_report"/>
+    </record>
+
+    <!-- Menu items go here -->
+    <menuitem name="Categorised Period Summary by Department" id="period_summary_by_dept_menu" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
+    action="template.action_view_period_summary_by_dept"/>
+
+    <!-- ************************** END OF Categorised Period Summary By Department ********************************* -->
+
+<!--   THESE ARE THE VIEWS AND ACTIONS FOR ITF16 FORM -->
+
+    <!-- report action -->
+    <record id="action_report_itf16_form" model="ir.actions.report">
+        <field name="name">ITF16 Form</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.itf16_form_template</field>
+        <field name="report_file">template.itf16_form_template</field>
+        <!--<field name="paperformat_id" ref="base.selection__report_paperformat__format__a4"/>-->
+        <field name="print_report_name">'ITF16 Form'</field>
+    </record>
+
+    <!-- server actions here -->
+    <record model="ir.actions.server" id="itf16_form_action_server">
+      <field name="name">Print ITF16 Form</field>
+      <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
+      <field name="state">code</field>
+      <field name="code">
+def print_report():
+
+    payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
+    exchange_rate_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "EXCHANGE_RATE")])
+    exchange_rate_rule_value = env['hr.rule.parameter.value'].search([('rule_parameter_id', '=', exchange_rate_rule_parameter.id)], limit=1, order="date_from desc")
+    rate = float(exchange_rate_rule_value.parameter_value)
+    currency = records[0].x_reporting_currency
+
+    if len(payslips) &lt; 0:
+        raise UserError("Batch %s has no payslips" % records[0].x_payroll_batch.name)
+
+    total_basic = 0
+    total_gross = 0
+    total_allowances = 0
+    total_pension = 0
+    total_nssa = 0
+    total_nec = 0
+    total_tax_credits = 0
+    total_paye = 0
+    total_aids_levy = 0
+    values = []
+
+        
+    company_name = ""
+    company_details = ""
+    company_email = ""
+    company_phone = ""
+
+    for payslip in payslips:
+
+        basic = 0
+        gross = 0
+        allowances = 0
+        pension = 0
+        nssa = 0
+        nec = 0
+        tax_credits = 0
+        paye = 0
+        aids_levy = 0
+
+        if payslip.employee_id.x_studio_eligible_for_credit_deduction:
+            if payslip.employee_id.x_studio_credit_type == "Disabled Persons" or payslip.employee_id.x_studio_credit_type == "Blind Persons":
+                if currency == "USD":
+                    tax_credits = payslip.employee_id.x_studio_tax_credit_amount
+                if currency == "ZWL":
+                    tax_credits = payslip.employee_id.x_studio_tax_credit_amount_zwl             
+            
+        for line in payslip.line_ids:
+            if line.code == 'BASIC' or line.name == 'Basic Salary':
+                if currency == "USD":
+                    basic += line.amount
+                if currency == "ZWL":
+                    basic += ( line.amount * rate )
+            if line.code == 'BASIC_ZWL' or line.name == 'Basic Salary ZWL':
+                if currency == "USD":
+                    basic += ( line.amount / rate )
+                if currency == "ZWL":
+                    basic += line.amount
+                    
+            if line.code == 'GROSS' or line.name == 'GROSS USD':
+                if currency == "USD":
+                    gross += line.amount
+                if currency == "ZWL":
+                    gross += ( line.amount * rate )
+            if line.code == 'GROSS_ZWL' or line.name == 'GROSS ZWL':
+                if currency == "USD":
+                    gross += ( line.amount / rate )
+                if currency == "ZWL":
+                    gross += line.amount
+                    
+            if line.code == 'NSSANPS' or line.name == 'NSSA NPS USD':
+                if currency == "USD":
+                    nssa_nps += -(line.amount)
+                if currency == "ZWL":
+                    nssa_nps += - ( line.amount * rate )
+            if line.code == 'NSSANPS_ZWL' or line.name == 'NSSA NPS ZWL':
+                if currency == "USD":
+                    nssa_nps += - ( line.amount / rate )
+                if currency == "ZWL":
+                    nssa_nps += - (line.amount)                            
+
+
+
+            if line.code == 'PENS' or line.name == 'Pension USD':
+                if currency == "USD":
+                    pension += - (line.amount)
+                if currency == "ZWL":
+                    pension += - ( line.amount * rate )
+            if line.code == 'PENS_ZWL' or line.name == 'Pension ZWL':
+                if currency == "USD":
+                    pension += - ( line.amount / rate )
+                if currency == "ZWL":
+                    pension += - (line.amount)
+
+            if line.code == 'NEC_EMPLOYEE' or line.name == 'Nec Employee USD':
+                if currency == "USD":
+                    nec += - (line.amount)
+                if currency == "ZWL":
+                    nec += - ( line.amount * rate )
+            if line.code == 'NEC_EMPLOYEE_ZWL' or line.name == 'Nec Employee ZWL':
+                if currency == "USD":
+                    nec += - ( line.amount / rate )
+                if currency == "ZWL":
+                    nec += - (line.amount)
+                    
+            if line.category_id.code == 'ALW' or line.category_id.name == 'Allowance':
+                if currency == "USD":
+                    allowances += (line.amount)
+                if currency == "ZWL":
+                    allowances += ( line.amount * rate )
+            if line.category_id.code == 'ALW_ZWL' or line.category_id.name == 'Allowance ZWL':
+                if currency == "USD":
+                    allowances += ( line.amount / rate )
+                if currency == "ZWL":
+                    allowances += (line.amount)
+            if line.code == 'PENS' or line.name == 'Pension USD':
+                if currency == "USD":
+                    pension += - (line.amount)
+                if currency == "ZWL":
+                    pension += - ( line.amount * rate )
+            if line.code == 'PENS_ZWL' or line.name == 'Pension ZWL':
+                if currency == "USD":
+                    pension += - ( line.amount / rate )
+                if currency == "ZWL":
+                    pension += - (line.amount)
+
+            if line.code == 'PENS' or line.name == 'Pension USD':
+                if currency == "USD":
+                    pension += - (line.amount)
+                if currency == "ZWL":
+                    pension += - ( line.amount * rate )
+            if line.code == 'PENS_ZWL' or line.name == 'Pension ZWL':
+                if currency == "USD":
+                    pension += - ( line.amount / rate )
+                if currency == "ZWL":
+                    pension += - (line.amount)
+    
+            if line.code == 'PAYE' or line.name == 'PAYE USD':
+                if currency == "USD":
+                    paye += - (line.amount)
+                if currency == "ZWL":
+                    paye += - ( line.amount * rate )
+            if line.code == 'PAYE_ZWL' or line.name == 'PAYE ZWL':
+                if currency == "USD":
+                    paye += - ( line.amount / rate )
+                if currency == "ZWL":
+                    paye += - (line.amount)
+                    
+            if line.code == 'AIDS' or line.name == 'AIDS LEVY USD':
+                if currency == "USD":
+                    aids_levy += - (line.amount)
+                if currency == "ZWL":
+                    aids_levy += - ( line.amount * rate )
+            if line.code == 'AIDS_ZWL' or line.name == 'AIDS LEVY ZWL':
+                if currency == "USD":
+                    aids_levy += - ( line.amount / rate )
+                if currency == "ZWL":
+                    aids_levy += - (line.amount)                     
+
+
+        total_basic += basic
+        total_gross += gross
+        total_allowances += allowances
+        total_pension += pension 
+        total_nssa += nssa
+        total_nec += nec
+        total_tax_credits += tax_credits
+        total_paye += paye
+        total_aids_levy += aids_levy
+
+
+        if payslip.company_id:
+            company_name = payslip.company_id.name
+            company_details = payslip.company_id.company_details
+            company_email = payslip.company_id.email
+            company_phone = payslip.company_id.phone
+
+        value = {
+            "name": payslip.employee_id.name,
+            "id_number": payslip.employee_id.identification_id,
+            "date_of_birth": payslip.employee_id.birthday,
+            "hire_date": payslip.employee_id.create_date,
+            "contract_end": payslip.contract_id.date_end,
+            "basic": "%.2f" % basic,
+            "gross": "%.2f" % gross,
+            "allowances": "%.2f" % allowances,
+            "pension": "%.2f" % pension,
+            "nssa": "%.2f" % nssa,
+            "nec": "%.2f" % nec,
+            "tax_credits": "%.2f" % tax_credits,
+            "paye": "%.2f" % paye,
+            "aids_levy": "%.2f" % aids_levy,
+            "basic": "%.2f" % basic,
+            "date_from": payslip.date_from,
+            "date_to": payslip.date_to,
+
+        }
+        values.append(value)
+
+    data = {
+        'company': company_name,
+        'details': company_details,
+        'email': company_email,
+        'contact': company_phone,        
+        'total_basic': "%.2f" % total_basic,
+        'total_gross': "%.2f" % total_gross,
+        'total_allowances': "%.2f" % total_allowances,
+        'total_pension': "%.2f" % total_pension,
+        'total_nssa': "%.2f" % total_nssa,
+        'total_nec': "%.2f" % total_nec,
+        'total_tax_credits': "%.2f" % total_tax_credits,
+        'total_paye': "%.2f" % total_paye,
+        'total_aids_levy': "%.2f" % total_aids_levy,
+        'payslips': values
+    }
+
+    return env.ref('template.action_report_itf16_form').report_action(docids=payslips, data=data)
+
+action = print_report()
+
+      </field>
+    </record>
+
+
+    <!-- Views Here -->
+     <record model="ir.ui.view" id="itf16_form_report">
+      <field name="name">itf16_form_batch_select_view</field>
+      <field name="model">x_payroll_batch</field>
+      <field name="arch" type="xml">
+        <form string="Select Batch">
+          <sheet>
+            <group col="8">
+              <field name="x_payroll_batch" string="Payslip Batch"/>
+              <field name="x_reporting_currency" string="Reporting Currency"/>
+            </group>
+            <footer>
+              <button name="template.itf16_form_action_server" type="action" string="Print" class="btn-primary"/>
+              <button string="Cancel" special="cancel" class="btn-secondary"/>
+            </footer>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <!-- window actions -->
+    <record id="action_view_itf16_form" model="ir.actions.act_window">
+        <field name="name">ITF16 Form</field>
+        <field name="res_model">x_payroll_batch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="template.itf16_form_report"/>
+    </record>
+
+    <!-- Menu items go here -->
+    <menuitem name="ITF16 Form" id="itf16_form_menu" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
+    action="template.action_view_itf16_form"/>
+
+    
+
+    <!-- ************************** END OF ITF16 FORM ********************************* -->
+
+<!--   THESE ARE THE VIEWS AND ACTIONS FOR NSSA P4 Form   -->
+
+    <!-- report action -->
+    <record id="action_report_nssa_p4" model="ir.actions.report">
+        <field name="name">NSSA P4 Form</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.nssa_p4_template</field>
+        <field name="report_file">template.nssa_p4_template</field>
+        <!--<field name="paperformat_id" ref="base.selection__report_paperformat__format__a4"/>-->
+        <field name="print_report_name">'NSSA P4 Form'</field>
+    </record>
+
+    <!-- server actions here -->
+    <record model="ir.actions.server" id="nssa_p4_action_server">
+      <field name="name">Print NSSA_P4_Form</field>
+      <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
+      <field name="state">code</field>
+      <field name="code">
+def print_report():
+    payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
+
+    if(len(payslips) &lt; 1): raise UserError("The batch selected has no payslips.")
+    currency = records[0].x_reporting_currency
+
+    exchange_rate_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "EXCHANGE_RATE")])
+    exchange_rate_rule_value = env['hr.rule.parameter.value'].search([('rule_parameter_id', '=', exchange_rate_rule_parameter.id)], limit=1, order="date_from desc")
+    rate = float(exchange_rate_rule_value.parameter_value)
+
+    nssa_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "NSSA_CEIL")])
+    nssa_rule_value = env['hr.rule.parameter.value'].search([('rule_parameter_id', '=', nssa_rule_parameter.id)], limit=1, order="date_from desc")
+    nssa_ceil_rtgs = float(nssa_rule_value.parameter_value)
+    nssa_ceil_usd = nssa_ceil_rtgs / rate 
+
+    total_basic = 0
+    total_basic_zwl = 0
+    total_nssa_contrib = 0
+    total_nssa_contrib_zwl = 0
+    total_insurable_earnings = 0
+    total_insurable_earnings_zwl = 0
+    values = []
+
+
+    for payslip in payslips:
+        basic = 0
+        basic_zwl = 0
+        nssa_contrib = 0
+        nssa_contrib_zwl = 0
+        insurable_earnings = 0
+        insurable_earnings_zwl = 0
+        for line in payslip.line_ids:
+            if(line.code == "BASIC" or line.name == "Basic USD"):
+                basic += line.amount
+                if basic > nssa_ceil_usd:
+                    insurable_earnings = nssa_ceil_usd
+                else:
+                    insurable_earnings += basic
+        
+            if(line.code == "BASIC_ZWL" or line.name == "Basic ZWL"):
+                basic_zwl += line.amount
+                if basic_zwl > nssa_ceil_rtgs:
+                    insurable_earnings_zwl += nssa_rule_value
+                else:
+                    insurable_earnings_zwl += basic_zwl
+        
+                        
+                        
+            if(line.code == "NSSANPS" or line.name == "NSSA NPS USD"):
+                nssa_contrib += line.amount
+        
+            if(line.code == "NSSANPS_ZWL" or line.name == "NSSA NPS ZWL"):
+                nssa_contrib_zwl += line.amount
+
+        total_basic += basic
+        total_basic_zwl += basic_zwl
+        total_nssa_contrib += nssa_contrib
+        total_nssa_contrib_zwl += nssa_contrib_zwl
+        total_insurable_earnings += insurable_earnings
+        total_insurable_earnings_zwl += insurable_earnings_zwl
+        
+        if payslip.company_id:
+            company_name = payslip.company_id.name
+            company_details = payslip.company_id.company_details
+            company_email = payslip.company_id.email
+            company_phone = payslip.company_id.phone
+            
+
+        value = {
+
+            # employee info
+            "employee_name": payslip.employee_id.name,
+            "employee_ssnid": payslip.employee_id.ssnid,
+            "employee_id": payslip.employee_id.id,
+            "employee_identification_id": payslip.employee_id.identification_id,
+            "insurable_earnings": insurable_earnings,
+            "insurable_earnings_zwl": insurable_earnings_zwl,
+            "nssa_contrib": nssa_contrib,
+            "nssa_contrib_zwl": nssa_contrib_zwl,
+            
+            "contract_start": payslip.contract_id.date_start,
+            "contract_type": payslip.contract_id.contract_type_id.name,
+            "basic": basic,
+            "basic_zwl": basic_zwl,
+            "insurable_earnings": "%.2f" % insurable_earnings,
+            "insurable_earnings_zwl": "%.2f" % insurable_earnings_zwl,
+            
+        }
+        values.append(value)
+
+    data = {
+        'company': company_name,
+        'details': company_details,
+        'email': company_email,
+        'contact': company_phone,
+        'total': total_insurable_earnings,
+        'total_zwl': total_insurable_earnings_zwl,
+        'total_basic': total_basic,
+        'total_basic_zwl': total_basic_zwl,
+        'total_nps': total_nssa_contrib,
+        'total_nps_zwl': total_nssa_contrib_zwl,
+        "user": payslip.activity_user_id.name,
+        "current_time": datetime.datetime.now(),
+        "date_from": payslip.date_from,
+        "date_to": payslip.date_to,      
+        'create_date': payslip.create_date,
+        'payslips': values
+    }      
+        
+
+    return env.ref('template.action_report_nssa_p4').report_action(docids=payslips, data=data)
+
+
+action = print_report()
+
+      </field>
+    </record>
+
+
+    <!-- Views Here -->
+     <record model="ir.ui.view" id="nssa_p4_report">
+      <field name="name">nssa_p4_batch_select_view</field>
+      <field name="model">x_payroll_batch</field>
+      <field name="arch" type="xml">
+        <form string="Select Batch">
+          <sheet>
+            <group col="8">
+              <field name="x_payroll_batch" string="Payslip Batch"/>
+              <!-- Prints both usd and zwl -->
+              <!-- <field name="x_reporting_currency" string="Reporting Currency"/>  -->
+            </group>
+            <footer>
+              <button name="template.nssa_p4_action_server" type="action" string="Print" class="btn-primary"/>
+              <button string="Cancel" special="cancel" class="btn-secondary"/>
+            </footer>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <!-- window actions -->
+    <record id="action_view_nssa_p4" model="ir.actions.act_window">
+        <field name="name">NSSA P4 Form</field>
+        <field name="res_model">x_payroll_batch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="template.nssa_p4_report"/>
+    </record>
+
+    <!-- Menu items go here -->
+    <menuitem name="NSSA P4 Form" id="nssa_p4_menu" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
+    action="template.action_view_nssa_p4"/>
+
+    
+    
+    <!-- ************************** END OF NSSA P4 Form ********************************* -->    
+
+<!--   THESE ARE THE VIEWS AND ACTIONS FOR Long Detail Period Pay Summary  -->
+
+    <!-- report action -->
+    <record id="action_report_long_detailed_period_summary_template" model="ir.actions.report">
+        <field name="name">Non Categorised Period Pay Summary - Long Detail</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.long_detailed_period_summary_template</field>    
+        <field name="report_file">template.long_detailed_period_summary_template</field>
+        <!-- <field name="paperformat_id" ref="template.paper_format_payroll_reports"/> -->
+        <field name="print_report_name">'Non Categorised Period Pay Summary - Long Detailed'</field>
+    </record>
+
+    <!-- server actions here -->
+    <record model="ir.actions.server" id="long_detailed_period_summary_action_server">
+      <field name="name">Print Period Pay Summary - Long Detailed</field>
+      <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
+      <field name="state">code</field>
+      <field name="code">
+def print_report():
+
+    payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
+    exchange_rate_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "EXCHANGE_RATE")])
+    exchange_rate_rule_value = env['hr.rule.parameter.value'].search([('rule_parameter_id', '=', exchange_rate_rule_parameter.id)], limit=1, order="date_from desc")
+    rate = float(exchange_rate_rule_value.parameter_value)
+    currency = records[0].x_reporting_currency
+
+    if len(payslips) &lt; 0:
+        raise UserError("Batch %s has no payslips" % records[0].x_payroll_batch.name)
+
+    total_basic = 0
+    total_gross = 0
+    total_bonus = 0
+    total_allowances = 0
+    total_nssa = 0
+    total_medical = 0
+    total_pension = 0
+    total_nec = 0
+    total_tax_credit = 0
+    total_paye = 0
+    total_aids_levy = 0
+    total_net_pay = 0
+    total_leave = 0
+    total_overtime = 0
+    total_overtime_hours = 0
+
+    values = []
+
+    for payslip in payslips:
+        
+        if payslip.employee_id.x_studio_grade:
+            grade = payslip.employee_id.x_studio_grade
+        else:
+            grade = "N/A"
+        
+        basic = 0
+        gross = 0
+        overtime = 0
+        overtime_hours = 0
+        hours = 0
+        bonus = 0
+        allowances = 0
+        leave_days = 0
+        nssa_nps = 0
+        medical = 0
+        tax_credit = 0
+        pension = 0
+        nec = 0
+        paye = 0
+        aids_levy = 0
+        net_pay = 0
+        leave_balance = 0
+        
+        # Calculating leave balance
+        for line in payslip.employee_id.x_hr_employee_line_ids_c6dc1:
+            if line.x_studio_leave_type == "Annual leave":
+                leave_balance += line.x_studio_annual_leave_days + line.x_studio_leave_balance + line.x_studio_leave-per_month - line.x_studio_days_taken
+                
+        # Calculating tax credits
+        if payslip.employee_id.x_studio_eligible_for_credit_deduction:
+            if payslip.employee_id.x_studio_credit_type == "Disabled Persons" or payslip.employee_id.x_studio_credit_type == "Blind Persons":
+                if currency == "USD":
+                    tax_credits = payslip.employee_id.x_studio_tax_credit_amount
+                if currency == "ZWL":
+                    tax_credits = payslip.employee_id.x_studio_tax_credit_amount_zwl             
+                    
+        # Calculating overtime
+        for line in payslip.contract_id.x_hr_contract_line_ids_3196f:
+            overtime_hours += line.x_studio_overtime_15_1 + line.x_studio_overtime_2_1
+
+        # Calculating Salary Rules
+        for line in payslip.line_ids:
+            # Calculating Overtime
+            if line.code == "OVERTIME" or line.name == "Overtime USD":
+                if payslip.contract_id.x_studio_allow_overtime:
+                    if currency == "USD":
+                        overtime += line.amount
+                    if currency == "ZWL":
+                        overtime += ( line.amount * rate )
+            if line.code == "OVERTIME_ZWL" or line.name == "Overtime ZWL":
+                if payslip.contract_id.x_studio_allow_overtime:
+                    if currency == "USD":
+                        overtime += ( line.amount / rate )
+                    if currency == "ZWL":
+                        overtime += line.amount
+                        
+            if line.code == 'BASIC' or line.name == 'Basic Salary':
+                if currency == "USD":
+                    basic += line.amount
+                if currency == "ZWL":
+                    basic += ( line.amount * rate )
+            if line.code == 'BASIC_ZWL' or line.name == 'Basic Salary ZWL':
+                if currency == "USD":
+                    basic += ( line.amount / rate )
+                if currency == "ZWL":
+                    basic += line.amount
+                    
+            if line.code == 'GROSS' or line.name == 'GROSS USD':
+                if currency == "USD":
+                    gross += line.amount
+                if currency == "ZWL":
+                    gross += ( line.amount * rate )
+                    
+            if line.code == 'GROSS_ZWL' or line.name == 'GROSS ZWL':
+                if currency == "USD":
+                    gross += ( line.amount / rate )
+                if currency == "ZWL":
+                    gross += line.amount
+                    
+            if line.code == 'NSSANPS' or line.name == 'NSSA NPS USD':
+                if currency == "USD":
+                    nssa_nps += -(line.amount)
+                if currency == "ZWL":
+                    nssa_nps += - ( line.amount * rate )
+            if line.code == 'NSSANPS_ZWL' or line.name == 'NSSA NPS ZWL':
+                if currency == "USD":
+                    nssa_nps += - ( line.amount / rate )
+                if currency == "ZWL":
+                    nssa_nps += - (line.amount)                            
+
+            if line.code == 'MEDICAL' or line.name == 'Medical Contribution USD':
+                if currency == "USD":
+                    medical += - (line.amount)
+                if currency == "ZWL":
+                    medical += - ( line.amount * rate )
+            if line.code == 'MEDICAL_ZWL' or line.name == 'Medical Contribution ZWL':
+                if currency == "USD":
+                    medical += - ( line.amount / rate )
+                if currency == "ZWL":
+                    medical += - (line.amount)
+
+            if line.code == 'PENS' or line.name == 'Pension USD':
+                if currency == "USD":
+                    pension += - (line.amount)
+                if currency == "ZWL":
+                    pension += - ( line.amount * rate )
+            if line.code == 'PENS_ZWL' or line.name == 'Pension ZWL':
+                if currency == "USD":
+                    pension += - ( line.amount / rate )
+                if currency == "ZWL":
+                    pension += - (line.amount)
+
+            if line.code == 'NEC_EMPLOYEE' or line.name == 'Nec Employee USD':
+                if currency == "USD":
+                    nec += - (line.amount)
+                if currency == "ZWL":
+                    nec += - ( line.amount * rate )
+            if line.code == 'NEC_EMPLOYEE_ZWL' or line.name == 'Nec Employee ZWL':
+                if currency == "USD":
+                    nec += - ( line.amount / rate )
+                if currency == "ZWL":
+                    nec += - (line.amount)
+                    
+                    
+            if line.category_id.code == 'ALW' or line.category_id.name == 'Allowance':
+                if currency == "USD":
+                    allowances += (line.amount)
+                if currency == "ZWL":
+                    allowances += ( line.amount * rate )
+            if line.category_id.code == 'ALW_ZWL' or line.category_id.name == 'Allowance ZWL':
+                if currency == "USD":
+                    allowances += ( line.amount / rate )
+                if currency == "ZWL":
+                    allowances += (line.amount)
+
+            if line.code == 'PAYE' or line.name == 'PAYE USD':
+                if currency == "USD":
+                    paye += - (line.amount)
+                if currency == "ZWL":
+                    paye += - ( line.amount * rate )
+            if line.code == 'PAYE_ZWL' or line.name == 'PAYE ZWL':
+                if currency == "USD":
+                    paye += - ( line.amount / rate )
+                if currency == "ZWL":
+                    paye += - (line.amount)
+                    
+            if line.code == 'AIDS' or line.name == 'AIDS LEVY USD':
+                if currency == "USD":
+                    aids_levy += - (line.amount)
+                if currency == "ZWL":
+                    aids_levy += - ( line.amount * rate )
+            if line.code == 'AIDS_ZWL' or line.name == 'AIDS LEVY ZWL':
+                if currency == "USD":
+                    aids_levy += - ( line.amount / rate )
+                if currency == "ZWL":
+                    aids_levy += - (line.amount)                    
+        
+            if line.code == 'NET' or line.name == 'Net Salary USD':
+                if currency == "USD":
+                    net_pay += line.amount
+                if currency == "ZWL":
+                    net_pay += ( line.amount * rate )
+            if line.code == 'NET_ZWL' or line.name == 'Net Salary ZWL':
+                if currency == "USD":
+                    net_pay += ( line.amount / rate )
+                if currency == "ZWL":
+                    net_pay += line.amount                    
+        
+
+        total_basic += basic
+        total_gross += gross
+        total_bonus += bonus
+        total_allowances += allowances
+        total_nssa += nssa_nps
+        total_medical += medical
+        total_pension += pension
+        total_nec += nec
+        total_tax_credit += tax_credit
+        total_paye += paye
+        total_aids_levy += aids_levy
+        total_net_pay += net_pay
+        total_leave += leave_balance
+        total_overtime += overtime
+        total_overtime_hours += overtime_hours
+
+        value = {
+            
+            "name": payslip.employee_id.name,
+            "grade": grade,
+            "leave_balance": leave_balance,
+            "overtime_hours": overtime_hours,
+            "overtime": overtime,
+            "hours": hours,            
+            "basic": "%.2f" % basic,
+            "gross": "%.2f" % gross,
+            "bonus": "%.2f" % bonus,
+            "allowances": "%.2f" % allowances,
+            "nssa": "%.2f" % nssa_nps,
+            "medical": "%.2f" % medical,
+            "tax_credit": "%.2f" % tax_credit,
+            "pension": "%.2f" % pension,
+            "nec": "%.2f" % nec,
+            "paye": "%.2f" % paye,
+            "aids_levy": "%.2f" % aids_levy,
+            "net_pay": "%.2f" % net_pay,
+            "date_from": payslip.date_from,
+            "date_to": payslip.date_to
+        }
+        
+        values.append(value)
+            
+    data = {
+    
+        'total_basic': "%.2f" % total_basic,
+        'total_gross': "%.2f" % total_gross,
+        'total_bonus': "%.2f" % total_bonus,
+        'total_leave': total_leave,
+        'total_benefits': "%.2f" % total_allowances,
+        'total_nssa': "%.2f" % total_nssa,
+        'total_medical': "%.2f" % total_medical,
+        'total_pension': "%.2f" % total_pension,
+        'total_nec': "%.2f" % total_nec,
+        'total_paye': "%.2f" % total_paye,
+        'total_aids_levy': "%.2f" % total_aids_levy,
+        'total_net_pay': "%.2f" % total_net_pay,
+        'total_tax_credit': "%.2f" % total_tax_credit,
+        'total_net_pay': total_net_pay,
+        'total_overtime': total_overtime,
+        'total_overtime': total_overtime_hours,
+        'payslips': values
+    }
+    return env.ref('template.action_report_long_detailed_period_summary_template').report_action(docids=payslips, data=data)
+action = print_report()
+    
+      </field>
+    </record>
+
+
+    <!-- Views Here -->
+     <record model="ir.ui.view" id="long_detailed_period_summary_report">
+      <field name="name">long_detailed_period_summary_batch_select_view</field>
+      <field name="model">x_payroll_batch</field>
+      <field name="arch" type="xml">
+        <form string="Select Batch">
+          <sheet>
+            <group col="8">
+              <field name="x_payroll_batch" string="Payslip Batch"/>
+              <field name="x_reporting_currency" string="Reporting Currency"/>
+            </group>
+            <footer>
+              <button name="template.long_detailed_period_summary_action_server" type="action" string="Print" class="btn-primary"/>
+              <button string="Cancel" special="cancel" class="btn-secondary"/>
+            </footer>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <!-- window actions -->
+    <record id="action_view_long_detailed_period_summary" model="ir.actions.act_window">
+        <field name="name">Period Pay Summary Long Detail</field>
+        <field name="res_model">x_payroll_batch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="template.long_detailed_period_summary_report"/>
+    </record>
+
+    <!-- Menu items go here -->
+    <menuitem name="Period Pay Summary Long Detail" id="long_detailed_period_summary_menu" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
+    action="template.action_view_long_detailed_period_summary"/>
+
+    
+
+    <!-- ************************** END OF Period Pay Summary - Long Detail ********************************* -->        
+
+<!--   THESE ARE THE VIEWS AND ACTIONS FOR NSSA Remittance Report  -->
+
+    <!-- report action -->
+    <record id="action_report_nssa_remittance_report_template" model="ir.actions.report">
+        <field name="name">NSSA Remittance Report</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.nssa_remittance_template</field>    
+        <field name="report_file">template.nssa_remittance_template</field>
+        <!-- <field name="paperformat_id" ref="template.paper_format_payroll_reports"/> -->
+        <field name="print_report_name">'NSSA Remittance Report'</field>
+    </record>
+
+    <!-- server actions here -->
+    <record model="ir.actions.server" id="action_server_nssa_remittance">
+      <field name="name">Print NSSA Remittance Report</field>
+      <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
+      <field name="state">code</field>
+      <field name="code">
+def make_calculations():
+    payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
+    if(len(payslips) &lt; 1): raise UserError("The batch selected has no payslips.")
+    exchange_rate_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "EXCHANGE_RATE")])
+    exchange_rate = exchange_rate_rule_parameter._get_parameter_from_code("EXCHANGE_RATE", date=records[0].x_payroll_batch.create_date.date(), raise_if_not_found=True)
+    wcif_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "WCIF")])
+    wcif = wcif_rule_parameter._get_parameter_from_code("WCIF", date=records[0].x_payroll_batch.create_date.date(), raise_if_not_found=True)
+    company = payslips[0].company_id
+
+    total_nssa = 0
+    total_wcif = 0
+    total_wages_nps = 0
+    total_wages_nps_zwl = 0
+    total_wages_wcif = 0
+    total_wages_wcif_zwl = 0
+    total_nssa_zwl = 0
+    total_wcif_zwl = 0
+    total_wages_zwl = 0
+    total_employees_nps_usd = 0
+    total_employees_wcif_usd = 0
+    total_employees_nps_zwl = 0
+    total_employees_wcif_zwl = 0
+
+
+    for payslip in payslips:
+        for line in payslip.line_ids:
+            if line.code == "NSSANPS":
+                total_employees_nps_usd += 1
+            if line.code == "NSSANPS" or line.code == "NSSANPS_CONTRIBUTION":
+                total_nssa += line.amount
+                for _line in payslip.line_ids:
+                    if _line.code == "BASIC" and line.code == "NSSANPS":
+                        total_wages_nps += _line.amount
+            if line.code == "NSSANPS_ZWL":
+                total_employees_nps_zwl += 1
+            if line.code == "NSSANPS_ZWL" or line.code == "NSSANPS_ZWL_CONTRIBUTION":
+                total_nssa_zwl += line.amount
+                for _line in payslip.line_ids:
+                    if _line.code == "BASIC_ZWL" and line.code == "NSSANPS_ZWL":
+                        total_wages_nps_zwl += _line.amount
+            if line.code == "WCIF":
+                total_employees_wcif_usd += 1
+            if line.code == "WCIF":
+                total_wcif += line.amount
+                for _line in payslip.line_ids:
+                    if _line.code == "BASIC":
+                        total_wages_wcif += _line.amount
+            if line.code == "WCIF_ZWL":
+                total_employees_wcif_zwl += 1
+            if line.code == "WCIF_ZWL":
+                total_wcif_zwl += line.amount
+                for _line in payslip.line_ids:
+                    if _line.code == "BASIC_ZWL":
+                        total_wages_wcif_zwl += _line.amount
+
+
+    # raise UserError(total_nssa)
+    address = ""   
+    if company.partner_id.street and company.partner_id.city:
+        address = company.partner_id.street + ", " + company.partner_id.city
+
+    data = {
+        "wcif": wcif,
+        "total_employees_nps_usd": total_employees_nps_usd,
+        "total_employees_nps_zwl": total_employees_nps_zwl,
+        "total_employees_wcif_usd": total_employees_wcif_usd,
+        "total_employees_wcif_zwl": total_employees_wcif_zwl,
+        "total_wages_nps": total_wages_nps,
+        "total_wages_nps_zwl": total_wages_nps_zwl,
+        "total_wages_wcif": total_wages_wcif,
+        "total_wages_wcif_zwl": total_wages_wcif_zwl,
+        "wcif_contributions": total_wcif,
+        "wcif_contributions_zwl": total_wcif_zwl,
+        "nps_contributions": total_nssa,
+        "nps_contributions_zwl": total_nssa_zwl,
+        "contribution_date": payslips[0].date_from,
+        "employer": company.name,
+        "address": address,
+        "contact": company.phone
+    }
+    return env.ref('template.action_report_nssa_remittance_report_template').report_action(None, data=data)
+action = make_calculations()
+
+      </field>
+    </record>
+
+
+    <!-- Views Here -->
+     <record model="ir.ui.view" id="nssa_remittance_report">
+      <field name="name">nssa_remittance_batch_select_view</field>
+      <field name="model">x_payroll_batch</field>
+      <field name="arch" type="xml">
+        <form string="Select Batch">
+          <sheet>
+            <group col="8">
+              <field name="x_payroll_batch" string="Payslip Batch"/>
+              <!-- <field name="x_reporting_currency" string="Reporting Currency"/> -->
+            </group>
+            <footer>
+              <button name="template.action_server_nssa_remittance" type="action" string="Print" class="btn-primary"/>
+              <button string="Cancel" special="cancel" class="btn-secondary"/>
+            </footer>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <!-- window actions -->
+    <record id="action_view_nssa_remittance" model="ir.actions.act_window">
+        <field name="name">NSSA Remittance Report</field>
+        <field name="res_model">x_payroll_batch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="template.nssa_remittance_report"/>
+    </record>
+
+    <!-- Menu items go here -->
+    <menuitem name="NSSA Remittance Report" id="menu_nssa_remittance" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
+    action="template.action_view_nssa_remittance"/>
+
+    
+
+    <!-- ************************** END OF NSSA Remittance Report ********************************* -->      
+
+<!--   THESE ARE THE VIEWS AND ACTIONS Bank Summary Report  -->
+
+    <!-- report action -->
+    <record id="action_report_bank_summary_template" model="ir.actions.report">
+        <field name="name">Bank Summary</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.bank_summary_report_template</field>    
+        <field name="report_file">template.bank_summary_report_template</field>
+        <!-- <field name="paperformat_id" ref="template.paper_format_payroll_reports"/> -->
+        <field name="print_report_name">'Bank Summary'</field>
+    </record>
+   
+    <!-- server actions here -->
+    <record model="ir.actions.server" id="action_server_bank_summary">
+      <field name="name">Print Bank Summary</field>
+      <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
+      <field name="state">code</field>
+      <field name="code">
+def make_calculations():
+    payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
+    exchange_rate_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "EXCHANGE_RATE")])
+    exchange_rate_rule_value = env['hr.rule.parameter.value'].search([('rule_parameter_id', '=', exchange_rate_rule_parameter.id)], limit=1, order="date_from desc")
+    rate = float(exchange_rate_rule_value.parameter_value)
+    currency = records[0].x_reporting_currency
+   
+    
+    if(len(payslips) &lt; 1): raise UserError("The batch selected has no payslips.")
+    
+    total_net_pay = 0
+    
+    bank_group = {}
+    
+    for payslip in payslips:
+    
+        bank = payslip.employee_id.bank_account_id
+        bank_name = "N/A"
+        branch = ""
+        account_number = ""
+        net_pay = 0
+
+        if bank:
+            bank_name = bank.bank_name
+            acccount_number = bank.acc_number
+
+        bank_group.setdefault(bank_name, [])
+
+        for line in payslip.line_ids:
+            if line.code == 'NET' or line.name == 'Net Salary USD':
+                if currency == "USD":
+                    net_pay += line.amount
+                if currency == "ZWL":
+                    net_pay += ( line.amount * rate )
+            if line.code == 'NET_ZWL' or line.name == 'Net Salary ZWL':
+                if currency == "USD":
+                    net_pay += ( line.amount / rate )
+                if currency == "ZWL":
+                    net_pay += line.amount 
+        
+        total_net_pay += net_pay                    
+        value = {
+            "name": payslip.employee_id.name,
+            "branch": branch,
+            "account_number": account_number,
+            "net_pay": "%.2f" % net_pay 
+        }
+        bank_group[bank_name].append(value)
+    
+    data = {
+        "total_pay": "%.2f" % total_net_pay,
+        "payslips": bank_group,
+        "pay_date": payslip.create_date
+    }
+
+    return env.ref('template.action_report_bank_summary_template').report_action(docids=payslips, data=data)
+        
+action = make_calculations()
+
+      </field>
+    </record>
+
+
+    <!-- Views Here -->
+     <record model="ir.ui.view" id="bank_summary_report">
+      <field name="name">bank_summary_batch_select_view</field>
+      <field name="model">x_payroll_batch</field>
+      <field name="arch" type="xml">
+        <form string="Select Batch">
+          <sheet>
+            <group col="8">
+              <field name="x_payroll_batch" string="Payslip Batch"/>
+              <!-- <field name="x_reporting_currency" string="Reporting Currency"/> -->
+            </group>
+            <footer>
+              <button name="template.action_server_bank_summary" type="action" string="Print" class="btn-primary"/>
+              <button string="Cancel" special="cancel" class="btn-secondary"/>
+            </footer>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <!-- window actions -->
+    <record id="action_view_bank_summary" model="ir.actions.act_window">
+        <field name="name">Bank Summary</field>
+        <field name="res_model">x_payroll_batch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="template.bank_summary_report"/>
+    </record>
+
+    <!-- Menu items go here -->
+    <menuitem name="Bank Summary" id="menu_bank_summary" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
+    action="template.action_view_bank_summary"/>
+
+    
+
+    <!-- ************************** END OF Bank Summary Report ********************************* -->     
+
+</data>
+</odoo>
