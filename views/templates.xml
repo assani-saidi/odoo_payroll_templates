@@ -24,7 +24,7 @@
                             </tr>
 
                         </thead>
-
+                        
                         <tbody>
                             <t t-foreach="payslips" t-as="payslip">
                                 <t t-set="counter" t-value="counter + 1"/>
@@ -56,4 +56,1031 @@
             </t>
         </t>
     </template>
+
+    <template id="pension_report_template">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <h3>PENSION REPORT</h3>
+                    <br/>
+            
+                    <!-- dynamic variables here  -->
+                    <t t-set="number" t-value="1"/>
+            
+                    <!-- table here  -->
+                    <table class="table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th/>
+                                <th><b>Full Name</b></th>
+                                <th><b>Start Date</b></th>
+                                <th><b>End Date</b></th>
+                                <th><b>Basic Pay</b></th>
+                                <th><b>Employee Contribution</b></th>
+                                <th><b>Employer Contribution</b></th>
+                                <th><b>Total Contribution</b></th>
+                            </tr>
+            
+                        </thead>
+            
+                        <tbody>
+            
+                                <t t-set="keys" t-value="list(payslips.keys())"/>
+                                
+                                <t t-foreach="keys" t-as="grade">
+                                
+                                
+                                    <!--initializing dynamic variables -->
+                                <t t-set="counter" t-value="0"/>
+                                
+                                <t t-set="basic_total" t-value="0"/>
+                                <t t-set="employee_total" t-value="0"/>
+                                <t t-set="employer_total" t-value="0"/>
+                                <t t-set="grade_total_contrib" t-value="0"/>
+                                    
+                                <tr>
+                                    <td colspan="8">
+                                    <span><strong>Grade: <t t-esc="grade"/></strong></span>
+                                    </td>                            
+                                </tr>
+                                    
+                                <t t-foreach="payslips[grade]" t-as="payslip">
+                                
+                                    <tr>
+                                    <td t-esc="number"/>
+                                    <td t-esc="payslip['name']" class="text-bolder"/>
+                                    <td t-esc="payslip['date_from']"/>
+                                    <td t-esc="payslip['date_to']"/>
+                                    <td t-esc="payslip['basic']"/>
+                                    <td t-esc="payslip['employee']"/>
+                                    <td t-esc="payslip['employer']"/>
+                                    <td t-esc="payslip['total']"/>
+                                    </tr>
+                                    
+                                    <t t-set="counter" t-value="counter + 1"/>
+                                    <t t-set="number" t-value="number + 1"/>
+                                    
+                                    <!--Calculating totals for each grade-->
+                                    <t t-set="basic_total" t-value="basic_total + float(payslip['basic'])"/>
+                                    <t t-set="employee_total" t-value="employee_total + float(payslip['employee'])"/>
+                                    <t t-set="employer_total" t-value="employer_total + float(payslip['employer'])"/>
+                                    <t t-set="grade_total_contrib" t-value="grade_total_contrib + float(payslip['total'])"/>
+                                
+                                </t>
+                                
+                                <tr>  
+                                    <!-- Final Total for last row-->
+                                    <td colspan="4" class="text-center">Grade Total <span><small t-esc="rate"/></span></td>
+                                    <td t-esc="'%.2f'%(basic_total)"/>
+                                    <td t-esc="'%.2f'%(employee_total)"/>
+                                    <td t-esc="'%.2f'%(employer_total)"/>
+                                    <td t-esc="'%.2f'%(grade_total_contrib)"/>
+                                </tr>
+                                
+                                </t>
+                                
+                                <tr>
+                                    <!-- Final Total for last row-->
+                                    <td colspan="4" class="text-center"><h3>Period Total <span><small t-esc="rate"/></span></h3></td>
+                                    <td t-esc="total_basic"/>
+                                    <td t-esc="total_employee_contribution"/>
+                                    <td t-esc="total_employer_contribution"/>
+                                    <td t-esc="total_total_contribution"/>
+                                </tr>
+                                
+                        </tbody>
+            
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <template id="zimdef_report_template">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <h3>Zimbabwe Manpower Developement Fund</h3>
+                    <br/>
+      
+                    <!-- dynamic variables here -->
+                    <t t-set="counter" t-value="0"/>
+      
+                    <!-- table here -->
+                    <table class="table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th/>
+                                <th><b>Full Name</b></th>
+                                <th><b>Start Date</b></th>
+                                <th><b>End Date</b></th>
+                                <th><b>Basic Pay</b></th>
+                                <th><b>Gross Pay</b></th>
+                                <th><b>Employer Contribution</b></th>
+      
+                            </tr>
+      
+                        </thead>
+      
+                        <tbody>
+                            <t t-foreach="payslips" t-as="payslip">
+                                <t t-set="counter" t-value="counter + 1"/>
+      
+                                <!-- we display our conversions -->
+                                <tr>
+                                    <td t-esc="counter"/>
+                                    <td t-esc="payslip['name']" class="text-bolder"/>
+                                    <td t-esc="payslip['date_from']"/>
+                                    <td t-esc="payslip['date_to']"/>
+                                    <td t-esc="payslip['basic']"/>
+                                    <td t-esc="payslip['gross']"/>
+                                    <td t-esc="payslip['employer']"/>
+                                </tr>
+      
+                            </t>
+                                <tr>
+                                <td colspan="4" class="text-center"><b>PERIOD TOTALS </b></td>
+                                <td t-esc="total_basic"/>
+                                <td t-esc="total_gross"/>
+                                <td t-esc="total_employer_contribution"/>
+                                </tr>
+                        </tbody>
+      
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <template id="tax_credit_summary_template">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <h3>Tax Credits Summary </h3>
+                    <br/>
+      
+                     <!--dynamic variables here -->
+                    <t t-set="counter" t-value="0"/>
+      
+                     <!--table here -->
+                    <table class="table-sm table-striped">
+                        <thead>
+                            <tr>
+                                <th/>
+                                <th><b>Full Name</b></th>
+                                <th><b>Start Date</b></th>
+                                <th><b>End Date</b></th>
+                                <th><b>Tax Credits B/F</b></th>
+                                <th><b>Elderly</b></th>
+                                <th><b>Disabled</b></th>
+                                <th><b>Blind</b></th>
+                                <th><b>Med Aid</b></th>
+                                <th><b>Total</b></th>
+                                <th><b>Tax Credits C/F</b></th>
+                            </tr>
+      
+                        </thead>
+      
+                        <tbody>
+                            <t t-foreach="payslips" t-as="payslip">
+                                <t t-set="counter" t-value="counter + 1"/>
+      
+                                 <!--we display our conversions -->
+                                <tr>
+                                    <td t-esc="counter"/>
+                                    <td t-esc="payslip['name']" class="text-bolder"/>
+                                    <td t-esc="payslip['date_from']"/>
+                                    <td t-esc="payslip['date_to']"/>
+                                    <td t-esc="payslip['opening']"/>
+                                    <td t-esc="payslip['elderly']"/>
+                                    <td t-esc="payslip['disabled']"/>
+                                    <td t-esc="payslip['blind']"/>
+                                    <td t-esc="payslip['medical']"/>
+                                    <td t-esc="payslip['total_row']"/>
+                                    <td t-esc="payslip['closing_bal']"/>
+                                </tr>
+      
+                            </t>
+                                <tr>
+                                  <td colspan="4" class="text-center"><b>PERIOD TOTALS <span><small>Rate = </small><small t-esc="rate"/></span></b></td>
+                                  <td t-esc="total_opening"/>
+                                  <td t-esc="total_elderly"/>
+                                  <td t-esc="total_disabled"/>
+                                  <td t-esc="total_blind"/>
+                                  <td t-esc="total_medical"/>
+                                  <td t-esc="grand_total"/>
+                                  <td t-esc="total_closing"/>
+                                </tr>
+                        </tbody>
+      
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <template id="period_summary_by_dept_template">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <br style="height=30px;"></br>
+                    <h3>Categorised Period Summary by Department</h3>
+                    <br/>
+            
+                     <!--dynamic variables here  -->
+                    <t t-set="number" t-value="1"/>
+            
+                     <!--table here  -->
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th></th>
+                                <th><b>Basic Pay</b></th>
+                                <th><b>Gross Salary</b></th>
+                                <th><b>Bonus</b></th>
+                                <th colspan="2"><b>Benefits</b></th>
+                                <th><b>NSSA NPS</b></th>
+                                <th><b>Medical Aid</b></th>
+                                <th><b>Pension</b></th>
+                                <th style="width:75px;"><b>NEC</b></th>
+                                <th><b>Sundry Deductions</b></th>
+                                <th><b>P.A.Y.E</b></th>
+                                <th><b>AIDS Levy</b></th>
+                                <th><b>Net Pay</b></th>
+                            </tr>
+                        
+                        
+                        
+                        
+                        </thead>
+            
+                        <tbody>
+            
+                                <t t-set="keys" t-value="list(payslips.keys())"/>
+                                
+                                <t t-foreach="keys" t-as="department">
+                                  <!--initializing dynamic variables -->
+                               
+                                  
+                                  <t t-set="basic_dept" t-value="0"/>
+                                  <t t-set="gross_dept" t-value="0"/>
+                                  <t t-set="bonus_dept" t-value="0"/>
+                                  <t t-set="benefits_dept" t-value="0"/>
+                                  <t t-set="nssa_dept" t-value="0"/>
+                                  <t t-set="medical_dept" t-value="0"/>
+                                  <t t-set="pension_dept" t-value="0"/>
+                                  <t t-set="nec_dept" t-value="0"/>
+                                  <t t-set="deductions_dept" t-value="0"/>
+                                  <t t-set="paye_dept" t-value="0"/>
+                                  <t t-set="aids_levy_dept" t-value="0"/>
+                                  <t t-set="net_pay_dept" t-value="0"/>
+                                  <t t-set="leave_days_dept"  t-value="0"/>
+                                
+                                      
+                                  <tr style="height=20px;">
+                                      <td colspan="4">
+                                        <span style="font-size:18px;"><strong>Dept: <t t-esc="department"/></strong></span>
+                                      </td>
+                                      
+                                      <td>
+                                          <span>Leave Days: </span>
+                                      </td>
+                                        
+                                      <td colspan="7">
+                                          <span>Grade: </span>
+                                      </td>                                
+                                  </tr>
+                                      
+                                  <t t-foreach="payslips[department]" t-as="payslip">
+                                      
+                                      <tr>
+                                        <td colspan="4">
+                                          <span style="color:blue;" ><t t-esc="payslip['name']"/></span>
+                                        </td>
+                                        <td>
+                                          <span style="color:blue;" ><t t-esc="payslip['days_taken']"/></span>
+                                        </td>
+                                        <td>
+                                          <span style="color:blue;" ><t t-esc="payslip['grade']"></t></span>
+                                        </td>
+    
+                                      </tr>
+    
+                                      <tr>
+                                        <td></td>
+                                        <td t-esc="payslip['basic']" t-options='{"widget": "float", "precision": 2}'/>
+                                        <td t-esc="payslip['gross']" t-options='{"widget": "float", "precision": 2}'/>
+                                        <td t-esc="payslip['bonus']" t-options='{"widget": "float", "precision": 2}'/>
+                                        <td colspan="2" t-esc="payslip['allowances']" t-options='{"widget": "float", "precision": 2}'/>
+                                        <td t-esc="payslip['nssa']" t-options='{"widget": "float", "precision": 2}'/>
+                                        <td t-esc="payslip['medicals']" t-options='{"widget": "float", "precision": 2}'/>
+                                        <td t-esc="payslip['pension']" t-options='{"widget": "float", "precision": 2}'/>
+                                        <td t-esc="payslip['nec']" t-options='{"widget": "float", "precision": 2}'/>
+                                        <td t-esc="payslip['deductions']" t-options='{"widget": "float", "precision": 2}'/>
+                                        <td t-esc="payslip['paye']" t-options='{"widget": "float", "precision": 2}'/>
+                                        <td t-esc="payslip['aids_levy']" t-options='{"widget": "float", "precision": 2}'/>
+                                        <td t-esc="payslip['net_pay']" t-options='{"widget": "float", "precision": 2}'/>
+                                        
+                                      </tr>
+                                      
+    
+                                      <!--Calculating totals for each department-->
+                                      <t t-set="basic_dept" t-value="basic_dept + payslip['basic']"/>
+                                      <t t-set="gross_dept" t-value="gross_dept + payslip['gross']"/>
+                                      <t t-set="bonus_dept" t-value="bonus_dept + payslip['bonus']"/>
+                                      <t t-set="benefits_dept" t-value="benefits_dept + payslip['allowances']"/>
+                                      <t t-set="nssa_dept" t-value="nssa_dept + payslip['nssa']"/>
+                                      <t t-set="medical_dept" t-value="medical_dept + payslip['medicals']"/>
+                                      <t t-set="pension_dept" t-value="pension_dept + payslip['pension']"/>
+                                    
+                                      <t t-set="nec_dept" t-value="nec_dept + payslip['nec']"/>
+                                      <t t-set="deductions_dept" t-value="deductions_dept + payslip['deductions']"/>
+                                      <t t-set="paye_dept" t-value="paye_dept + payslip['paye']"/>
+                                      <t t-set="aids_levy_dept" t-value="aids_levy_dept + payslip['aids_levy']"/>
+                                      <t t-set="net_pay_dept" t-value="net_pay_dept + payslip['net_pay']"/>
+                                    
+                                      <t t-set="leave_days_dept" t-value="leave_days_dept + payslip['days_taken']"/>
+                                
+                                  </t>
+                                  
+                                  <tr style="height: 20px; !important">
+                                    <td colspan="13"></td>
+                                  </tr>
+    
+                                  <tr>
+                                    <td colspan="4">Dept Leave Days Total: </td>
+                                    <td colspan="9"><t t-esc="total_leave"/></td>
+                                  </tr>
+                                                                  
+                                  <tr style="border-bottom: 2px solid black">  
+                                       <!--Final Total for Department-->
+                                    <td><b>Dept Totals:</b></td>
+                                    <td t-esc="basic_dept"  t-options='{"widget": "float", "precision": 2}' />
+                                    <td t-esc="gross_dept" t-options='{"widget": "float", "precision": 2}'/>
+                                    <td t-esc="bonus_dept" t-options='{"widget": "float", "precision": 2}'/>
+                                    <td colspan="2" t-esc="benefits_dept" t-options='{"widget": "float", "precision": 2}'/> 
+                                    <td t-esc="nssa_dept" t-options='{"widget": "float", "precision": 2}'/>
+                                    <td t-esc="medical_dept" t-options='{"widget": "float", "precision": 2}'/> 
+                                    <td t-esc="pension_dept" t-options='{"widget": "float", "precision": 2}'/> 
+                                    <td t-esc="nec_dept" t-options='{"widget": "float", "precision": 2}'/>
+                                    <td t-esc="deductions_dept" t-options='{"widget": "float", "precision": 2}'/>
+                                    <td t-esc="paye_dept" t-options='{"widget": "float", "precision": 2}'/>
+                                    <td t-esc="aids_levy_dept" t-options='{"widget": "float", "precision": 2}'/> 
+                                    <td t-esc="net_pay_dept" t-options='{"widget": "float", "precision": 2}'/>                                     
+                                  </tr>
+                                  
+                                  
+                                </t>
+                                
+                                
+    
+                                <tr style="height: 30px;">
+                                  <td colspan="13"></td>
+                                </tr>
+                                
+                                <tr>
+                                  <td colspan="4">Leave Days Total: </td>
+                                  <td colspan="9"><t t-esc="total_leave"/></td>
+                                </tr>
+                                
+                                
+                                <tr style="height: 30px;">
+                                     <!--Final Total for last row-->
+                                    <td style="font-size: 25px;">Period Totals</td>
+    
+                                    <td t-esc="total_basic"/>
+                                    <td t-esc="total_gross"/>
+                                    <td t-esc="total_bonus"/>
+                                    <td colspan="2" t-esc="total_benefits"/>
+                                    <td t-esc="total_nssa"/>
+                                    <td t-esc="total_medical"/>
+                                    <td t-esc="total_pension"/>
+                                    <td t-esc="total_nec"/>
+                                    <td t-esc="total_deductions"/>
+                                    <td t-esc="total_paye"/>
+                                    <td t-esc="total_aids_levy"/>
+                                    <td t-esc="total_net_pay"/>
+                                </tr>
+                                
+                        </tbody>
+            
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <template id="itf16_form_template">
+        <t t-call="web.html_container">
+            <t t-call="web.external_layout">
+                <div class="page">
+                    <h3>ITF16 Report</h3>
+                    <br/>
+                    
+                    <div class="container">
+                        <div class="row">
+                            <!-- company info -->
+                            <div class="col-10">
+                                <div class="row">
+                                    <ul class="col-4" style="list-style: none;">
+                                        <li>Company Name   : <span t-esc="company"/></li>
+                                        <li>ITF16 Year     : <span t-esc="date_to"/></li>
+                                        <li>Contact Address: <span t-esc="details"/></li>
+                                    </ul>
+                                    <ul class="col-8" style="list-style: none;">
+                                        <li>BP Number  :</li>
+                                        <li>FDS Method :</li>
+                                        <li>Phone      :<span t-esc="contact"/></li>
+                                    </ul>
+                                </div>
+                            </div>
+                            <!-- Logo -->
+                            <div class="col-2">
+                                <img height = "115" src="https://www.zimra.co.zw/templates/zimra/images/Zimra-logo.png" 
+                                style="object-fit: contain;" />                                
+                            </div>
+                        </div>
+                    </div>
+                    <!-- table here -->
+                    <table class="table">
+                        <t t-set="count" t-value="0"/>
+                        <thead>>
+                            <th/>
+                            <th>Name</th>
+                            <th>ID Number</th>
+                            <th>Date of Birth</th>
+                            <th>Employed From</th>
+                            <th>Emplyoyed To</th>
+                            <th>Basic Salary</th>
+                            <th>Gross Salary</th>
+                            <th>Allowances</th>
+                            <th>Pension</th>
+                            <th>NSSA</th>
+                            <th>NEC</th>
+                            <th>Tax Credits</th>
+                            <th>P.A.Y.E</th>
+                            <th>AIDS LEvy</th>
+
+                        </thead>
+                        <tbody>
+                            <tbody>
+                                <t t-foreach="payslips" t-as="payslip">
+                                    <t t-set="count" t-value="count + 1"/>
+                                    <tr>
+                                        <td t-esc="count"/>
+                                        <td t-esc="name"/>
+                                        <td t-esc="id_number"/>
+                                        <td t-esc="date_of_birth"/>
+                                        <td t-esc="hire_date"/>
+                                        <td t-esc="contract_end"/>
+                                        <td t-esc="payslip['basic']"/>
+                                        <td t-esc="payslip['gross']"/>
+                                        <td t-esc="payslip['allowances']"/>
+                                        <td t-esc="payslip['pension']"/>
+                                        <td t-esc="payslip['nssa']"/>
+                                        <td t-esc="payslip['nec']"/>
+                                        <td t-esc="payslip['tax_credits']"/>
+                                        <td t-esc="payslip['paye']"/>
+                                        <td t-esc="payslip['aids_levy']"/>
+                                    </tr>
+                                </t>
+                                <tr>
+                                    <td colspan="6">Period Totals</td>
+                                    <td t-esc="total_basic"/>
+                                    <td t-esc="total_gross"/>
+                                    <td t-esc="total_allowances"/>
+                                    <td t-esc="total_pension"/>
+                                    <td t-esc="nssa"/>
+                                    <td t-esc="nec"/>
+                                    <td t-esc="tax_credits"/>
+                                    <td t-esc="total_paye"/>
+                                    <td t-esc="total_aids_levy"/>
+                                </tr>
+                            </tbody>
+                        </tbody>
+                    
+                    </table>
+                </div>
+            </t>
+        </t>
+    </template>
+
+    <template id="nssa_p4_template">
+        <t t-call="web.html_container">
+            <t t-call="web.basic_layout">
+                <div class="page" >
+                    <style>
+                        .page{
+                            font-size: 0.60em !important;
+                            font-family: Barlow !important;
+                            margin: auto;
+                            margin-left: 30px;
+                            width: 80%;
+                        }
+                        .row{
+                            margin-bottom: 8px;
+                            font-weight: bold !important;
+                        }
+                        .blue{
+                            color: #0000FF !important;
+                        }
+                    </style>
+
+                    <!-- header of the form -->
+                    <div class="row" style="margin-top: 12px;">
+                        <div class="col-4">
+                            <div class="text-danger">FORM P4</div>
+                            <div>Monthly Payment Schedule of Employees</div>
+                            <div style="margin-top: 20px;">
+                                <div><span class="pr-4">Employer SSR:</span><span class="blue">0214261V</span></div>
+                                <div><span class="pr-4">Employer EC:</span><span class="blue">0214261V</span></div>
+                                <div><span class="pr-4">Employer's Name:</span><span class="blue"><t t-esc="company"/></span></div>
+                                <div><span class="pr-4">Employer's Physical Address:</span><span class="blue"><t t-esc="address"/></span></div>
+                            </div>
+                        </div>
+                        <div class="col-4 d-flex justify-content-center">
+                             <img height = "115" src="https://www.nssa.org.zw/wp-content/uploads/2020/12/logo-3.jpg" 
+                             style="max-height: 125px;" />
+                        </div>
+                        <div class="col-4" style="margin-left: 30px;">
+                            <div>National Social Security Authority</div>
+                            <div>Selous Avenue/Sam Nujoma</div>
+                            <div>P.O. Box CY1387</div>
+                            <div>Causeway, Harare</div>
+                            <div>Telephone (04) 706523-5</div>
+                            <div>Fax (04) 796320</div>
+                            <div>Payment Month and Year: <span class="blue" t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d')"/></div>
+                            <div>Sector: </div>
+                            <div>Email Address: <span class="blue" t-esc="email"/></div>
+                            <div>Contact: <span class="blue" t-esc="contact"/></div>
+                        </div>
+                    </div>
+
+                    <!-- some useful information -->
+                    <div style = "font-weight: bold; margin-top: 15px; margin-bottom: 6px;">
+                        <div>Reason for Cessation: - Insert C for Casual Employee, R for Retirement, D for Death, O for any other reason for cessation</div>
+                        <div>Nature of Employment - Insert A if Arduous employment, and N for Normal Employment</div>
+                    </div>
+
+                    <!-- table view of all payslips and their employee owners -->
+                    <table class="table-sm table-striped">
+                        <thead class="thead-dark">
+                            <tr>
+                                <td/>
+                                <td><b>SSN</b></td>
+                                <td><b>Employee Staff No</b></td>
+                                <td><b>National ID No</b></td>
+                                <td><b>Period</b></td>
+                                <td><b>Date</b></td>
+                                <td><b>Name</b></td>
+                                <td><b>Commencement Date</b></td>
+                                <td><b>Cessation Date</b></td>
+                                <td><b>Reason for Cessation</b></td>
+                                <td><b>Nature of employment</b></td>
+                                <td><b>NPS Insuarable Earnings (USD)</b></td>
+                                <td><b>NPS Insuarable Earnings (ZWL)</b></td>
+                                <td><b>Total NPS (9%) Contribution (USD)</b></td>
+                                <td><b>Total NPS (9%) Contribution (ZWL)</b></td>
+                                <td><b>Basic Salary WCIF (USD)</b></td>
+                                <td><b>Basic Salary WCIF (ZWL)</b></td>
+
+                            </tr>
+                        </thead>
+                        <tbody>
+                                <t t-set="count" t-value="0"/>
+                                <t t-foreach="payslips" t-as="payslip">
+                                    <t t-set="count" t-value="count + 1"/>
+                                    <tr>
+                                        <td><span t-esc="count" style="font-weight: bolder;"/></td>
+                                        <td><span t-esc="payslip['employee_ssnid']" /></td>
+                                        <td><span t-esc="payslip['employee_id']" /></td>
+                                        <td><span t-esc="payslip['employee_identification_id']" /></td>
+                                        <td>
+                                            <span t-esc="date_from" t-options='{"widget": "date","format": "dd-MM-yyyy"}'/>
+                                            <span t-esc="date_to" t-options='{"widget": "date","format": "dd-MM-yyyy"}'/>
+                                        </td>
+                                        <td>
+                                            <span t-esc="create_date" t-options='{"widget": "date","format": "dd-MM-yyyy"}'/>
+                                        </td>
+                                        <td><span t-esc="payslip['employee_name']" /></td>
+                                        <td><span t-esc="payslip['contract_start']" /></td>
+                                        <td/>
+                                        <td/>
+                                        <td><span t-esc="payslip['contract_type']" /></td>
+                                        <td>
+                                            <span t-esc="payslip['insurable_earnings']" />
+                                        </td>
+                                        <td>
+                                            <span t-esc="payslip['insurable_earnings_zwl']"/>
+                                        </td>
+                                        <!-- doc.line_ids -->
+                                        <td>
+                                            <span t-esc="payslip['nssa_contrib']" />
+                                        </td>
+                                        <td>
+                                            <span t-esc="payslip['nssa_contrib_zwl']" />
+                                        </td>
+                                        <td>
+                                            <span t-esc="payslip['basic']"  />
+                                        </td>
+                                        <td>
+                                            <span t-esc="payslip['basic_zwl']"  />
+                                        </td>
+
+                                    </tr>
+                                </t>
+
+                
+                            <tr class="text-danger">
+                                <td style="font-weight: bold !important;">PERIOD</td>
+                                <td style="font-weight: bold !important;">TOTALS</td>
+                                <td colspan="9"/>
+                                <td><span style="font-weight: bold !important; border-top: 1px solid black;" t-esc="total" t-options='{"widget": "float", "precision": 2}'/></td>
+                                <td><span style="font-weight: bold !important; border-top: 1px solid black;" t-esc="total_zwl" t-options='{"widget": "float", "precision": 2}'/></td>
+                                <td><span style="font-weight: bold !important;  border-top: 1px solid black;" t-esc="total_nps" t-options='{"widget": "float", "precision": 2}'/></td>
+                                <td><span style="font-weight: bold !important;  border-top: 1px solid black;" t-esc="total_nps_zwl" t-options='{"widget": "float", "precision": 2}'/></td>
+                                <td><span style="font-weight: bold !important;  border-top: 1px solid black;" t-esc="total_basic" t-options='{"widget": "float", "precision": 2}'/></td>
+                                <td><span style="font-weight: bold !important;  border-top: 1px solid black;" t-esc="total_basic_zwl" t-options='{"widget": "float", "precision": 2}'/></td>
+                            </tr>
+                        </tbody>
+                    </table>
+
+                    <!-- footer information and notes -->
+                    <div style = "margin-top: 8px;">
+                        <span style = "margin-right: 15px;"><b>Employer's Representative:</b><b class="blue pl-3" t-esc="user"/></span>
+                        <span style = "margin-right: 15px;"><b>Designation:</b><b class="blue pl-3">ADMINISTRATOR</b></span>
+                        <span style = "margin-right: 15px;"><b>Date:</b> <b class="blue pl-3" t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d')"/></span>
+                    </div>
+                    <div style = "margin-top: 8px; width: 70%;">
+                        <b>Note:</b> Use the National I.D. to identify employees pending the issue of Social Security Numbers.
+                        The information given in this form may be used for the purposes of other Schemes administered by NSSA.
+                    </div>
+                </div>
+            </t>
+        </t>       
+    </template>   
+
+    <template id="nssa_remittance_template">
+        <t t-name="studio_main_report">
+            <t t-call="web.html_container">
+              <t t-call="web.basic_layout">
+                  <div class="page">
+                      <style>
+                          .page{
+                              font-size: 1em !important;
+                              font-family: Barlow !important;
+                              margin: auto;
+                              width: 90%;
+                          }
+                          .blue{
+                              color: #0000FF !important;
+                          }
+                      </style>
+                      <!-- <span t-esc="wcif"/><hr/>
+                      <span t-esc="employees_count"/><hr/>
+                      <span t-esc="total_wages"/><hr/>
+                      <span t-esc="wcif_contributions"/><hr/>
+                      <span t-esc="nps_contributions"/><hr/> -->
+              
+                      <!-- the header -->
+                      <div class = "row">
+                          <div class = "col-3">
+                              <img height = "200" src = "https://i.postimg.cc/T1bny5Mx/nssa.png"
+                              style="max-height: 200px; margin-left: -70px !important;" />
+                          </div>
+                          <div class = "col-9"  style = "margin-top: 60px !important;">
+                              <h6 class = "text-right font-weight-bold">REMITTANCE ADVICE : FORM P4 A</h6>
+                              <h4 class = "text-right font-weight-bold">NATIONAL SOCIAL SECURITY AUTHORITY</h4>
+                          </div>
+                      </div>
+              
+                      <!-- the submenu goes here -->
+                      <div class="row">
+                          <div class="col-4">
+                              <span class="mr-4 font-weight-bold">SSR No:</span>
+                              <span class="font-weight-bold">0214261V</span>
+                          </div>
+                          <div class="col-4">
+                              <span class="mr-4 font-weight-bold">Industry Code (IC):</span>
+                              <span class="font-weight-bold"></span>
+                          </div>
+                          <div class="col-4">
+                              <span class="mr-4 font-weight-bold">WCIF Rate:</span>
+                              <span class="font-weight-bold"><t t-esc="wcif * 100"/>%</span>
+                          </div>
+                      </div>
+                      <div>
+                          <span class="mr-4 font-weight-bold">Contribution Date:</span>
+                          <span class="font-weight-bold" t-esc="contribution_date" />
+                      </div>
+                      <div>
+                          <span class="mr-4 font-weight-bold">Employer's Name:</span>
+                          <span class="font-weight-bold" t-esc="employer" />
+                      </div>
+                      <div>
+                          <span class="mr-4 font-weight-bold">Address:</span>
+                          <span class="font-weight-bold" t-esc="address"/>
+                      </div>
+                      <div>
+                          <span class="mr-4 font-weight-bold">Tel:</span>
+                          <span class="font-weight-bold" t-esc="contact" />
+                      </div>
+              
+                      <!-- table goes here -->
+                      <div style = "margin-top: 15px;">Cash/RTGS/Cheque Number:</div>
+                      <table class="table table-striped">
+                          <thead>
+                              <tr>
+                                  <th>CONTRIBUTION PAYABLE FOR:</th>
+                                  <th>NPS</th>
+                                  <th>WCIF</th>
+                              </tr>
+                          </thead>
+                          <tbody>
+                              <tr>
+                                  <td>Number of employees (USD)</td>
+                                  <td><span t-esc="total_employees_nps_usd" /></td>
+                                  <td><span t-esc="total_employees_wcif_usd" /></td>
+                              </tr>
+                               <tr>
+                                  <td>Number of employees (ZWL)</td>
+                                  <td><span t-esc="total_employees_nps_zwl" /></td>
+                                  <td><span t-esc="total_employees_wcif_zwl" /></td>
+                              </tr>
+                              <tr>
+                                  <td>Total Insurable Earnings (USD)</td>
+                                  <td><span t-esc="total_wages_nps" t-options='{"widget": "float", "precision": 2}'/></td>
+                                  <td><span t-esc="total_wages_wcif"  t-options='{"widget": "float", "precision": 2}'/></td>
+                              </tr>
+                               <tr>
+                                  <td>Total Insurable Earnings (ZWL)</td>
+                                  <td><span t-esc="total_wages_nps_zwl" t-options='{"widget": "float", "precision": 2}'/></td>
+                                  <td><span t-esc="total_wages_wcif_zwl"  t-options='{"widget": "float", "precision": 2}'/></td>
+                              </tr>
+                              <tr>
+                                  <td>Current Contributions (USD):</td>
+                                  <td><span t-esc="nps_contributions"  t-options='{"widget": "float", "precision": 2}'/></td>
+                                  <td><span t-esc="wcif_contributions"  t-options='{"widget": "float", "precision": 2}'/></td>
+                              </tr>
+                               <tr>
+                                  <td>Current Contributions (ZWL):</td>
+                                  <td><span t-esc="nps_contributions_zwl"  t-options='{"widget": "float", "precision": 2}'/></td>
+                                  <td><span t-esc="wcif_contributions_zwl"  t-options='{"widget": "float", "precision": 2}'/></td>
+                              </tr>
+                              <tr>
+                                  <td>Arrears (USD):</td>
+                                  <td></td>
+                                  <td></td>
+                              </tr>
+                               <tr>
+                                  <td>Arrears (ZWL):</td>
+                                  <td></td>
+                                  <td></td>
+                              </tr>
+                              <tr>
+                                  <td>Prepayments (USD):</td>
+                                  <td></td>
+                                  <td></td>
+                              </tr>
+                              <tr>
+                                  <td>Prepayments (ZWL):</td>
+                                  <td></td>
+                                  <td></td>
+                              </tr>
+                              <tr>
+                                  <td>Surcharge (USD):</td>
+                                  <td></td>
+                                  <td></td>
+                              </tr>
+                               <tr>
+                                  <td>Surcharge (ZWL):</td>
+                                  <td></td>
+                                  <td></td>
+                              </tr>
+                              <tr>
+                                  <td>Total Payment (USD):</td>
+                                  <td></td>
+                                  <td></td>
+                              </tr>
+                              <tr>
+                                  <td>Total Payment (ZWL):</td>
+                                  <td></td>
+                                  <td></td>
+                              </tr>
+                              <tr>
+                                  <td class="text-right font-weight-bold">GRAND TOTALS (USD):</td>
+                                  <td colspan="2" class="text-center font-weight-bold"><t t-esc="wcif_contributions + nps_contributions" t-options='{"widget": "float", "precision": 2}'/></td>
+                              </tr>
+                               <tr>
+                                  <td class="text-right font-weight-bold">GRAND TOTALS (ZWL):</td>
+                                  <td colspan="2" class="text-center font-weight-bold"><t t-esc="wcif_contributions_zwl + nps_contributions_zwl" t-options='{"widget": "float", "precision": 2}'/></td>
+                              </tr>
+                          </tbody>
+                      </table>
+              
+                      <!-- footer goes here -->
+                      <div style = "width: 85%">
+                          <p>
+                              In terms of SI 393 of 1993 as amended, the employer must remit contributions by the 10th day of the
+                              month following deduction, whether or not an invoice has been received.
+                              **Failure to pay contributions by the 10th of the month will result in surcharges and interest being levied
+                              on your account. **In the event of WCIF payment not being made by the due date, you are considered
+                              uninsured.
+                          </p>
+                          <p>
+                              In case of any queries, please contact the Collections Enquiry Office at your nearest Regional Office.
+                          </p>
+                          <p>
+                              DECLARATION: I declare that the above information is a true reflection of the contribution due in respect
+                              of all insured employees for the month.
+                          </p>
+                          <p>
+                              Signed:__________________________________Date: <t t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d')"/>
+                          </p>
+                          <p>
+                              <span style = "margin-right: 15px;"><b>Name:<span class="pl-4" t-esc="user.name" /></b></span>
+                              <span style = "margin-right: 15px;"><b>Position Held: <span class="pl-4">ADMINISTRATOR</span></b></span>
+                          </p>
+                      </div>
+              
+                  </div>
+              </t>
+            </t>
+            </t>
+                   
+    </template> 
+
+    <template id="long_detailed_period_summary_template">
+        <t t-name="studio_main_report">
+            <t t-call="web.html_container">
+              <t t-call="web.basic_layout">
+                  <div class="page">
+                      <style>
+                          .page{
+                              font-size: 1em !important;
+                              font-family: Barlow !important;
+                              margin: auto;
+                              width: 90%;
+                          }
+                          .blue{
+                              color: #0000FF !important;
+                          }
+                      </style>
+                      <table class="table table-striped">
+                        <thead class="">
+                          <th/>
+                          <th>Basic Salary</th>
+                          <th>Bonus</th>
+                          <th>Other Earnings</th>
+                          <th>Taxable Benefits</th>
+                          <th>Gross Pay </th>
+                          <th>NSSA</th>
+                          <th>NEC</th>
+                          <th>Pension</th>
+                          <th>Medical Aid</th>
+                          <th>Trade Union</th>
+                          <th>Sick Pay Fund</th>
+                          <th>Total Tax Credit</th>
+                          <th>PAYE</th>
+                          <th>AIDS Levy</th>
+                          <th>Net Pay</th>
+                        </thead>
+                        <tbody>
+                          
+                          <t t-set="count" t-value="0"/>
+                          <t t-foreach="payslips" t-as="payslip">
+                            
+                            <t t-set="count" t-value="count + 1"/>
+                            <tr>
+                              <td t-esc="count"/>
+                              <td t-esc="payslip['basic']"/>
+                              <td t-esc="payslip['bonus']"/>
+                              <td t-esc="payslip['allowances']"/>
+                              <td t-esc="0"/>
+                              <td t-esc="payslip['gross']"/>
+                              <td t-esc="payslip['nssa']"/>
+                              <td t-esc="payslip['nec']"/>
+                              <td t-esc="payslip['pension']"/>
+                              <td t-esc="payslip['medical']"/>
+                              <td t-esc="0"/>
+                              <td t-esc="0"/>
+                              <td t-esc="payslip['tax_credit']"/>
+                              <td t-esc="payslip['paye']"/>
+                              <td t-esc="payslip['aids_levy']"/>
+                              <td t-esc="payslip['net_pay']"/>
+                            </tr>
+                            
+                            <tr class="text-danger" style="font-size:20px;">
+                              <td/>
+                              <td colspan="3" t-esc="payslip['name']"/>
+                              <td colspan="2" >Grade :<span t-esc="payslip['grade']"/></td>
+                              <td colspan="2" >Hours :<t t-esc="payslip['hours']"/></td>
+                              <td colspan="4">Total Overtime :<span t-esc="payslip['overtime']"/></td>
+                              <td colspan="4">Ovetime hours: <span t-esc="payslip['overtime_hours']"></span></td>
+                            </tr>
+                            
+                            <tr style="height:30px; border-bottom: solid 1px black;">
+                              
+                            </tr>
+                            
+                          </t>
+                          
+                          
+                          <tr class="text-danger" style="font-size:20px;">
+                            <td colspan="7"/>
+                            <td colspan="3">Total Hours: <span t-esc="total_hours"/></td>
+                            <td colspan="3">Total Overtime: <span t-esc="total_overtime"/></td>
+                            <td colspan="3">Overtime Hours: <span t-esc="total_ovetime_hours"/></td>
+                          </tr>
+                          
+                          <tr class="text-danger">
+                            <td/>
+                            <td t-esc="total_basic"/>
+                            <td t-esc="total_bonus"/>
+                            <td t-esc="total_allowances"/>
+                            <td t-esc="0"/>
+                            <td t-esc="total_gross"/>
+                            <td t-esc="total_nssa"/>
+                            <td t-esc="total_nec"/>
+                            <td t-esc="total_pension"/>
+                            <td t-esc="total_medical"/>
+                            <td t-esc="0"/>
+                            <td t-esc="0"/>
+                            <td t-esc="total_tax_credit"/>
+                            <td t-esc="total_paye"/>
+                            <td t-esc="total_aids_levy"/>
+                            <td t-esc="total_net_pay"/>
+                          </tr>
+                        </tbody>
+                      </table>
+                  </div>
+              </t>
+            </t>
+        </t>      
+    </template> 
+
+    <template id="bank_summary_report_template">
+        <t t-name="studio_main_report">
+            <t t-call="web.html_container">
+              <t t-call="web.external_layout">
+                  <div class="page">
+                      <style>
+                          .page{
+                              font-size: 1em !important;
+                              font-family: Barlow !important;
+                              margin: auto;
+                              width: 90%;
+                          }
+                      </style>
+                      <h2>Bank Summary</h2>
+                      <hr/>
+                      <br/>
+                      <table class="table table-borderless">
+                        <thead>
+                            <th/>
+                            <th>Name</th>
+                            <th>Branch</th>
+                            <th>Account Number</th>
+                            <th>Net Pay</th>
+                        </thead>
+                        <tbody>
+                            <t t-set="keys" t-value="list(payslips.keys())"/>
+                            <t t-set="count" t-value="0"/>
+                            <t t-set="bank_total" t-value="0"/>
+
+                            <t t-foreach="keys" t-as="bank">
+                                <tr  class="text-primary">
+                                    <td colspan="3" t-esc="bank"/>
+                                    <td colspan="2"/>
+                                </tr>
+                                <t t-foreach="payslips[bank]" t-as="payslip">
+                                    <tr>
+                                        <td/>
+                                        <td t-esc="payslip['name']"/>
+                                        <td t-esc="payslip['branch']"/>
+                                        <td t-esc="payslip['account_number']"/>
+                                        <td t-esc="payslip['net_pay']"/>
+                                    </tr>
+                                    <t t-set="bank_total" t-value="bank_total + float(payslip['net_pay'])"/>
+                                </t>
+
+                                <!-- Each banks totals -->
+                                <tr class="text-primary">
+                                    <td colspan="4"><span t-esc="bank"/> Bank total: </td>
+                                    <td t-esc="bank_total"/>
+                                </tr>
+                            </t>
+                            <tr>
+                                <td colspan="4">Period Totals</td>
+                                <td t-esc="total_pay"/>
+                            </tr>
+                           
+                        </tbody>
+                      </table>
+                  </div>
+              </t>
+            </t>
+        </t>
+                   
+    </template>     
 </odoo>
