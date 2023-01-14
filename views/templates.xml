@@ -474,7 +474,10 @@
         <t t-call="web.html_container">
             <t t-call="web.external_layout">
                 <div class="page">
-                    <h3>ITF16 Report</h3>
+                    <div class="row">
+                        <h3 class="col-10">ITF16 Form</h3>
+                        <h5 class="col-2" t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d')" />
+                    </div>
                     <br/>
                     
                     <div class="container">
@@ -926,6 +929,12 @@
                               color: #0000FF !important;
                           }
                       </style>
+                      <!-- Title and Time -->
+                      <div class="row">
+                        <h3 class="col-10">Non Categorised Period Pay Summary : Long Detail</h3>
+                        <h5 class="col-2" t-esc="context_timestamp(datetime.datetime.now()).strftime('%Y-%m-%d')" />
+                      </div>  
+
                       <table class="table table-striped">
                         <thead class="">
                           <th/>
@@ -1032,7 +1041,10 @@
                               width: 90%;
                           }
                       </style>
-                      <h2>Bank Summary</h2>
+                      <div class="row">
+                        <h2 class="col-10">Bank Summary</h2>
+                        <h6 class="col-2 align-text-bottom"><i t-esc="pay_date"/></h6>                        
+                      </div>
                       <hr/>
                       <br/>
                       <table class="table table-borderless">
@@ -1083,4 +1095,124 @@
         </t>
                    
     </template>     
+
+    <template id="cash_summary_report_template">
+        <t t-name="studio_main_report">
+            <t t-call="web.html_container">
+              <t t-call="web.external_layout">
+                  <div class="page">
+                      <style>
+                          .page{
+                              font-size: 1em !important;
+                              font-family: Barlow !important;
+                              margin: auto;
+                              width: 90%;
+                          }
+                      </style>
+                      <div class="row">
+                        <h2 class="col-10">Cash Summary</h2>
+                        <h6 class="col-2 align-text-bottom"><i t-esc="pay_date"/></h6>                        
+                      </div>
+
+                      <hr/>
+                      <br/>
+                      <table class="table table-borderless">
+                        <thead>
+                            <th/>
+                            <th>Name</th>
+                            <th>ID Number</th>
+                            <th>Net Pay</th>
+                        </thead>
+                        <tbody>
+                            <t t-set="count" t-value="1"/>
+                            <t t-set="cash_total" t-value="0"/>
+
+                            <t t-foreach="payslips" t-as="payslip">
+                                <tr>
+                                    <td t-esc="count"/>
+                                    <td t-esc="payslip['name']"/>
+                                    <td t-esc="payslip['id_number']"/>
+                                    <td t-esc="payslip['net_pay']"/>
+                                </tr>
+                                <t t-set="count" t-value="count +  1"/>
+                                <t t-set="cash_total" t-value="cash_total + float(payslip['net_pay'])"/>
+                            </t>
+
+                            <!-- Each banks totals -->                        
+                            <tr>
+                                <td colspan="2">Period Totals in <span t-esc="currency"/> <span><small>Rate = </small><small t-esc="rate"/></span></td>
+                                <td t-esc="total_pay"/>
+                            </tr>
+                           
+                        </tbody>
+                      </table>
+                  </div>
+              </t>
+            </t>
+        </t>                
+    </template>
+
+    <template id="trade_union_report_template">
+        <t t-name="studio_main_report">
+            <t t-call="web.html_container">
+              <t t-call="web.external_layout">
+                  <div class="page">
+                      <style>
+                          .page{
+                              font-size: 1em !important;
+                              font-family: Barlow !important;
+                              margin: auto;
+                              width: 90%;
+                          }
+                      </style>
+                      <div class="row">
+                        <h2 class="col-10">Trade Union Summary</h2>
+                        <h6 class="col-2 align-text-bottom"><i t-esc="pay_date"/></h6>                        
+                      </div>
+
+                      <hr/>
+                      <br/>
+                      <table class="table table-borderless">
+                        <thead>
+                            <th/>
+                            <th>Name</th>
+                            <th>Basic Pay</th>
+                            <th>Trade Union <i>Employee</i></th>
+                            <th>Trade Union <i>Employer</i></th>
+                            <th>Total <i>Trade Union</i></th>
+                        </thead>
+                        <tbody>
+                            <t t-set="count" t-value="1"/>
+                            <t t-set="total_trade" t-value="0"/>
+
+                            <t t-foreach="payslips" t-as="payslip">
+                                <t t-set="trade_union_row_total" t-value="payslip['trade_union'] + payslip['trade_union_employer']"/>
+                                <tr>
+                                    <td t-esc="count"/>
+                                    <td t-esc="payslip['name']"/>
+                                    <td t-esc="payslip['basic']"/>
+                                    <td t-esc="payslip['trade_union']"/>
+                                    <td t-esc="payslip['trade_union_employer']"/>
+                                    <td t-esc="trade_union_total"/>
+                                </tr>
+                                <t t-set="count" t-value="count +  1"/>
+                                <t t-set="total_trade" t-value="trade_union_row_total"/>
+                            </t>
+
+                            <!-- Each banks totals -->                        
+                            <tr>
+                                <td colspan="2">Period Totals in <span t-esc="currency"/> <span><small>Rate = </small><small t-esc="rate"/></span></td>
+                                <td t-esc="total_basic"/>
+                                <td t-esc="total_trade_union"/>
+                                <td t-esc="total_trade_union_employer"/>
+                                <td t-esc="total_trade"/>
+                            </tr>
+                           
+                        </tbody>
+                      </table>
+                  </div>
+              </t>
+            </t>
+        </t>                
+    </template>
 </odoo>
