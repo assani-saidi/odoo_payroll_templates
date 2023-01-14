@@ -2005,7 +2005,7 @@
             <sheet>
               <group col="8">
                 <field name="x_payroll_batch" string="Payslip Batch"/>
-                <!-- <field name="x_reporting_currency" string="Reporting Currency"/> -->
+                <field name="x_reporting_currency" string="Reporting Currency"/>
               </group>
               <footer>
                 <button name="template.action_server_bank_summary" type="action" string="Print" class="btn-primary"/>
@@ -2032,7 +2032,115 @@
       
   
       <!-- ************************** END OF Bank Summary Report ********************************* -->     
+
+  <!--   THESE ARE THE VIEWS AND ACTIONS Cash Summary Report  -->
   
+      <!-- report action -->
+      <record id="action_report_cash_summary_template" model="ir.actions.report">
+        <field name="name">Cash Summary</field>
+        <field name="model">hr.payslip</field>
+        <field name="report_type">qweb-pdf</field>
+        <field name="report_name">template.cash_summary_report_template</field>    
+        <field name="report_file">template.cash_summary_report_template</field>
+        <!-- <field name="paperformat_id" ref="template.paper_format_payroll_reports"/> -->
+        <field name="print_report_name">'Cash Summary' + time.strftime('%Y-%m-%d')</field>
+    </record>
+   
+    <!-- server actions here -->
+    <record model="ir.actions.server" id="action_server_cash_summary">
+      <field name="name">Print Cash Summary</field>
+      <field name="model_id" ref="__export__.ir_model_445_508d9692"/>
+      <field name="state">code</field>
+      <field name="code">
+def make_calculations():
+    payslips = env["hr.payslip"].search([("payslip_run_id", "=", records[0].x_payroll_batch.id)])
+    exchange_rate_rule_parameter = env["hr.rule.parameter"].search([("code", "=", "EXCHANGE_RATE")])
+    exchange_rate_rule_value = env['hr.rule.parameter.value'].search([('rule_parameter_id', '=', exchange_rate_rule_parameter.id)], limit=1, order="date_from desc")
+    rate = float(exchange_rate_rule_value.parameter_value)
+    currency = records[0].x_reporting_currency
+   
+    
+    if(len(payslips) &lt; 1): raise UserError("The batch selected has no payslips.")
+    
+    total_net_pay = 0
+    
+    
+    for payslip in payslips:
+
+        net_pay = 0
+
+        if payslip.employee_id.bank_account_id:
+            continue # skip bank acounts
+
+        for line in payslip.line_ids:
+            if line.code == 'NET' or line.name == 'Net Salary USD':
+                if currency == "USD":
+                    net_pay += line.amount
+                if currency == "ZWL":
+                    net_pay += ( line.amount * rate )
+            if line.code == 'NET_ZWL' or line.name == 'Net Salary ZWL':
+                if currency == "USD":
+                    net_pay += ( line.amount / rate )
+                if currency == "ZWL":
+                    net_pay += line.amount 
+        
+        total_net_pay += net_pay                    
+        value = {
+            "name": payslip.employee_id.name,
+            "net_pay": "%.2f" % net_pay 
+        }
+        values.append(value)
+    
+    data = {
+        "total_pay": "%.2f" % total_net_pay,
+        "payslips": values,
+        "pay_date": payslip.create_date
+    }
+
+    return env.ref('template.action_report_cash_summary_template').report_action(docids=payslips, data=data)
+        
+action = make_calculations()
+
+      </field>
+    </record>
+
+
+    <!-- Views Here -->
+     <record model="ir.ui.view" id="cash_summary_report">
+      <field name="name">cash_summary_batch_select_view</field>
+      <field name="model">x_payroll_batch</field>
+      <field name="arch" type="xml">
+        <form string="Select Batch">
+          <sheet>
+            <group col="8">
+              <field name="x_payroll_batch" string="Payslip Batch"/>
+              <field name="x_reporting_currency" string="Reporting Currency"/>
+            </group>
+            <footer>
+              <button name="template.action_server_cash_summary" type="action" string="Print" class="btn-primary"/>
+              <button string="Cancel" special="cancel" class="btn-secondary"/>
+            </footer>
+          </sheet>
+        </form>
+      </field>
+    </record>
+
+    <!-- window actions -->
+    <record id="action_view_cash_summary" model="ir.actions.act_window">
+        <field name="name">Cash Summary</field>
+        <field name="res_model">x_payroll_batch</field>
+        <field name="view_mode">form</field>
+        <field name="target">new</field>
+        <field name="view_id" ref="template.cash_summary_report"/>
+    </record>
+
+    <!-- Menu items go here -->
+    <menuitem name="Cash Summary" id="menu_cash_summary" parent="studio_customization.payroll_reports_4f6826a9-6a1c-4e3c-89ae-f9fc446404cd" sequence="100"
+    action="template.action_view_cash_summary"/>
+
+    
+
+    <!-- ************************** END OF Cash Summary Report ********************************* -->         
   </data>
   </odoo>
   

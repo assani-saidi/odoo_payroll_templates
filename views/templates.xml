@@ -1083,4 +1083,67 @@
         </t>
                    
     </template>     
+
+    <template id="cash_summary_report_template">
+        <t t-name="studio_main_report">
+            <t t-call="web.html_container">
+              <t t-call="web.external_layout">
+                  <div class="page">
+                      <style>
+                          .page{
+                              font-size: 1em !important;
+                              font-family: Barlow !important;
+                              margin: auto;
+                              width: 90%;
+                          }
+                      </style>
+
+                      <h2>Cash Summary</h2>
+                      <h6><i t-esc="pay_date"/></h6>
+                      <hr/>
+                      <br/>
+                      <table class="table table-borderless">
+                        <thead>
+                            <th/>
+                            <th>Name</th>
+                            <th>Net Pay</th>
+                        </thead>
+                        <tbody>
+                            <t t-set="keys" t-value="list(payslips.keys())"/>
+                            <t t-set="count" t-value="0"/>
+                            <t t-set="bank_total" t-value="0"/>
+
+                            <t t-foreach="keys" t-as="bank">
+                                <tr  class="text-primary">
+                                    <td colspan="3" t-esc="bank"/>
+                                    <td colspan="2"/>
+                                </tr>
+                                <t t-foreach="payslips[bank]" t-as="payslip">
+                                    <tr>
+                                        <td/>
+                                        <td t-esc="payslip['name']"/>
+                                        <td t-esc="payslip['net_pay']"/>
+                                    </tr>
+                                    <t t-set="bank_total" t-value="bank_total + float(payslip['net_pay'])"/>
+                                </t>
+
+                                <!-- Each banks totals -->
+                                <tr class="text-primary">
+                                    <td colspan="4"><span t-esc="bank"/> Bank total: </td>
+                                    <td t-esc="bank_total"/>
+                                </tr>
+                            </t>
+                            <tr>
+                                <td colspan="4">Period Totals</td>
+                                <td t-esc="total_pay"/>
+                            </tr>
+                           
+                        </tbody>
+                      </table>
+                  </div>
+              </t>
+            </t>
+        </t>
+                   
+    </template>
 </odoo>
