@@ -1222,4 +1222,372 @@
             </t>
         </t>                
     </template>
+
+    <template id="NEC_report_template">
+        <t t-name="nec_report_template">
+            <t t-call="web.html_container">
+              <t t-call="web.external_layout">
+                  <div class="page">
+                      <!-- dynamic variables -->
+                    <t t-set="count" t-value="0"/>
+
+                      <h3>
+                          <b>PERIOD NEC LEVY RETURNS</b>
+                      </h3>
+                      <hr/>
+
+                        <!-- table -->
+                        <table class="table-sm table-striped">
+                             <thead>
+
+                               <tr>
+                                 <th></th>
+                                 <th><b>Full Name</b></th>
+                                 <th><b>Start Date</b></th>
+                                 <th><b>End Date</b></th>
+                                 <th><b>Grade</b></th>
+                                 <th><b>NEC Earnings</b></th>
+                                 <th><b>Employee %</b></th>
+                                 <th><b>Employer %</b></th>
+                                 <th><b>Total NEC %</b></th>
+                               </tr>
+                             </thead>
+                             <tbody>
+
+                               <t t-foreach="users" t-as="d">
+                                 <t t-set="count" t-value="count + 1"/>
+                                 <tr>
+                                   <td t-esc="count"/>
+                                   <td t-esc="d['name']"/>
+                                   <td t-esc="d['sdate']"/>
+                                   <td t-esc="d['edate']"/>
+                                   <td t-esc="d['grade']"/>
+                                   <td t-esc="d['basic']"/>
+                                   <td t-esc="d['employee']"/>
+                                   <td t-esc="d['employer']"/>
+                                   <td t-esc="d['total']"/>
+                                 </tr>
+                               </t>
+
+                                <tr>
+                                  <td colspan="6" class="text-center"><b>PERIOD TOTALS in <span t-esc="currency"/> <span><small>Rate = </small><small t-esc="rate"/></span></b></td>
+                                  <td><b><span t-esc="total_basic"/></b></td>
+                                  <td><b><span t-esc="total_employee_nec"/></b></td>
+                                  <td><b><span t-esc="total_employer_nec"/></b></td>
+                                  <td><b><span t-esc="total_employee_nec + total_employer_nec"/></b></td>
+                                </tr>
+
+                             </tbody>
+                         </table>
+                  </div>
+              </t>
+            </t>
+        </t>
+    </template>
+
+    <template id="Payroll_report_template">
+         <t t-name="payroll_report_template">
+              <t t-call="web.html_container">
+                  <t t-call="web.basic_layout">
+                      <div class="page">
+                          <style>
+                              .page{
+                                  font-size: 0.9em !important;
+                                  font-family: Barlow !important;
+                                  margin: auto;
+                                  width: 85%;
+                              }
+                          </style>
+
+                          <!-- header -->
+                          <div class="row" style="margin-top: 20px; margin-bottom: 40px;">
+                              <div class="col-3">
+                                  <img height="140" style="overflow: hidden !important; max-height: 140px !important; margin-top: -5px;" t-attf-src="/web/binary/company_logo" alt="logo here"/>
+                              </div>
+                              <div class="col-7">
+                                  <div class="mx-auto w-75">
+                                      <h4 t-esc="company" class="font-weight-bold text-center"/>
+                                      <h6 class="font-weight-bold text-center">PAYROLL SUMMARY FOR THE PERIOD FROM:</h6>
+                                      <h6 class="font-weight-bold text-center"><t t-esc="period"/></h6>
+                                  </div>
+                              </div>
+                              <div class="col-2">
+                              </div>
+                          </div>
+
+
+                          <!-- table -->
+                          <table class="table-sm table-borderless w-100">
+                              <thead>
+                                  <tr>
+                                      <th class="font-weight-bold" colspan="3">TOTAL EARNINGS</th>
+                                      <th class="font-weight-bold">ENTRIES</th>
+                                      <th class="font-weight-bold"></th>
+                                      <th class="font-weight-bold"> DEDUCTIONS</th>
+                                      <th class="font-weight-bold">ENTRIES</th>
+                                      <th class="font-weight-bold"></th>
+                                      <th class="font-weight-bold">COMPANY CONTRIBUTIONS</th>
+                                      <th class="font-weight-bold"></th>
+                                  </tr>
+                              </thead>
+                              <tbody>
+                                  <tr>
+                                      <td colspan="3">Basic</td>
+                                      <td t-esc="entries"/>
+                                      <td t-esc="basic" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td>P.A.Y.E</td>
+                                      <td t-esc="entries"/>
+                                      <td t-esc="paye" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td></td>
+                                      <td></td>
+                                  </tr>
+                                   <tr>
+                                      <td colspan="3">Basic zwl</td>
+                                      <td t-esc="entries"/>
+                                      <td t-esc="basic_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td>P.A.Y.E zwl</td>
+                                      <td t-esc="entries"/>
+                                      <td t-esc="paye_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td></td>
+                                      <td></td>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="3">Allowances</td>
+                                      <td t-esc="entries"/>
+                                      <td t-esc="allowances" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td>AIDS Levy</td>
+                                      <td t-esc="entries"/>
+                                      <td t-esc="aids" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td></td>
+                                      <td></td>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="3">Allowances zwl</td>
+                                      <td t-esc="entries"/>
+                                      <td t-esc="allowances_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td>AIDS Levy zwl</td>
+                                      <td t-esc="entries"/>
+                                      <td t-esc="aids_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td></td>
+                                      <td></td>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="5"></td>
+                                      <td>NSSA</td>
+                                      <td t-esc="entries"/>
+                                      <td t-esc="nssa" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td>NSSA</td>
+                                      <td t-esc="nssa" t-options='{"widget": "float", "precision": 2}'/>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="5"></td>
+                                      <td>NSSA zwl</td>
+                                      <td t-esc="entries"/>
+                                      <td t-esc="nssa_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td>NSSA zwl</td>
+                                      <td t-esc="nssa_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="5"></td>
+                                      <td>NEC</td>
+                                      <td t-esc="entries"/>
+                                      <td t-esc="nec" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td>NEC</td>
+                                      <td t-esc="nec" t-options='{"widget": "float", "precision": 2}'/>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="5"></td>
+                                      <td>NEC zwl</td>
+                                      <td t-esc="entries"/>
+                                      <td t-esc="nec_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td>NEC zwl</td>
+                                      <td t-esc="nec_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="8"></td>
+                                      <td>WCIF</td>
+                                      <td t-esc="wcif_contributions" t-options='{"widget": "float", "precision": 2}'/>
+                                  </tr>
+                                   <tr>
+                                      <td colspan="8"></td>
+                                      <td>WCIF zwl</td>
+                                      <td t-esc="wcif_contributions_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="8"></td>
+                                      <td>Zimdef</td>
+                                      <td t-esc="zimdef" t-options='{"widget": "float", "precision": 2}'/>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="8"></td>
+                                      <td>Zimdef zwl</td>
+                                      <td t-esc="zimdef_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="8"></td>
+                                      <td>Standards Development Levy</td>
+                                      <td t-esc="standards_levy" t-options='{"widget": "float", "precision": 2}'/>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="8"></td>
+                                      <td>Standards Development Levy zwl</td>
+                                      <td t-esc="standards_levy_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="8"></td>
+                                      <td>Stabilization Fund</td>
+                                      <td/>
+                                  </tr>
+                                  <tr>
+                                      <td colspan="8"></td>
+                                      <td>Stabilization Fund zwl</td>
+                                      <td/>
+                                  </tr>
+                                  <tr class = "font-weight-bold" style = "background-color: #EDEDED;">
+                                      <td colspan="4">Total Gross Pay</td>
+                                      <td t-esc="gross" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td colspan="2">Total Deductions</td>
+                                      <td t-esc="deductions" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td></td>
+                                      <td></td>
+                                  </tr>
+                                  <tr class = "font-weight-bold" style = "background-color: #EDEDED;">
+                                      <td colspan="4">Total Gross zwl</td>
+                                      <td t-esc="gross_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td colspan="2">Total Deductions zwl</td>
+                                      <td t-esc="deductions_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td></td>
+                                      <td></td>
+                                  </tr>
+                                  <tr class = "font-weight-bold" style = "background-color: #EDEDED;">
+                                      <td colspan="4">Total Net Pay</td>
+                                      <td t-esc="net" t-options='{"widget": "float", "precision": 2}'/>
+                                     <td colspan="2">Total Net Pay zwl</td>
+                                      <td t-esc="net_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td></td>
+                                      <td></td>
+                                  </tr>
+                                  <tr class = "font-weight-bold" style = "background-color: #EDEDED;">
+                                      <td>Benefits USD</td>
+                                      <td>0.00</td>
+                                      <td colspan="2">Credits USD</td>
+                                      <td t-esc="medical_contribution" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td colspan="2"></td>
+                                      <td/>
+                                      <td>Total Employer Contr. USD</td>
+                                      <td t-esc="emp_contributions" t-options='{"widget": "float", "precision": 2}'/>
+                                  </tr>
+                                  <tr class = "font-weight-bold" style = "background-color: #EDEDED;">
+                                      <td>Benefits ZWL</td>
+                                      <td>0.00</td>
+                                      <td colspan="2">Credits ZWL</td>
+                                      <td t-esc="medical_contribution_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                      <td colspan="2"></td>
+                                      <td/>
+                                      <td>Total Employer Contr. ZWL</td>
+                                      <td t-esc="emp_contributions_zwl" t-options='{"widget": "float", "precision": 2}'/>
+                                  </tr>
+                              </tbody>
+                          </table>
+
+                          <!-- the footer -->
+                          <hr/>
+                          <div class="row" style="margin-top: 8px; margin-bottom: 8px;">
+                              <div class="col-3 font-weight-bold">Initiated By:</div>
+                              <div class="col-3 font-weight-bold">_____________________</div>
+                              <div class="col-3 font-weight-bold">Confirmed By:</div>
+                              <div class="col-3 font-weight-bold">_____________________</div>
+                          </div>
+                          <div class="row" style="margin-top: 8px; margin-bottom: 8px;">
+                              <div class="col-3 font-weight-bold">Verified By:</div>
+                              <div class="col-3 font-weight-bold">_____________________</div>
+                              <div class="col-3 font-weight-bold">Approved By:</div>
+                              <div class="col-3 font-weight-bold">_____________________</div>
+                          </div>
+                      </div>
+                  </t>
+              </t>
+         </t>
+    </template>
+
+
+    <template id="Leave_summary_template">
+         <t t-name="Leave_summary_template">
+               <t t-call="web.html_container">
+                    <t t-call="web.external_layout">
+                        <div class="page">
+                          <!-- dynamic variables -->
+                          <t t-set="counter" t-value="1"/>
+                          <t t-set="start_date" t-value="sdate"/>
+                          <t t-set="end_date" t-value="edate"/>
+
+
+                          <!-- table -->
+                          <div class="p-2">
+                            <table class="table-sm table-striped">
+
+                              <!-- table header -->
+                              <thead>
+                                <tr>
+                                  <th/>
+                                  <th class="text-bolder">Full Name</th>
+                                  <th class="text-bolder">Start Date</th>
+                                  <th class="text-bolder">End Date</th>
+                                  <th class="text-bolder">Engagement Date</th>
+                                  <th class="text-bolder">Leave Per Month</th>
+                                  <th class="text-bolder">Opening Leave</th>
+                                  <th class="text-bolder">Days Accrued</th>
+                                  <th class="text-bolder">Annual Leave Taken</th>
+                                  <th class="text-bolder">Leave Balance</th>
+                                  <th class="text-bolder">Sick Leave Taken</th>
+                                  <th class="text-bolder">Sick Leave Balance</th>
+                                  <th class="text-bolder">Compassionate Leave Taken</th>
+                                  <th class="text-bolder">Compassionate Leave Balance</th>
+                                  <th class="text-bolder">Maternity Leave Taken</th>
+                                  <th class="text-bolder">Maternity Leave Balance</th>
+                                  <th class="text-bolder">Other Leave Taken</th>
+                                  <th class="text-bolder">Other Leave Balance</th>
+                                </tr>
+                              </thead>
+
+                              <!-- table header -->
+                              <tbody>
+                                <t t-foreach="users" t-as="user">
+                                  <tr>
+                                    <td t-esc="counter"  class="text-bold"/>
+                                    <td t-esc="user['full_name'][0]"  class="text-bold"/>
+                                    <td t-esc="start_date"/>
+                                    <td t-esc="end_date"/>
+                                    <td t-esc="user['engaged'][0]"/>
+                                    <td t-esc="user['leave_per_month']"/>
+                                    <td t-esc="user['opening_leave']"/>
+                                    <td t-esc="user['days_accrued']"/>
+                                    <td t-esc="user['annual_leave_taken']"/>
+                                    <td t-esc="user['annual_leave_balance']"/>
+                                    <td t-esc="user['annual_sick_leave_taken']"/>
+                                    <td t-esc="user['annual_sick_leave_days_balance']"/>
+                                    <td t-esc="user['annual_compassionate_leave_days_taken']"/>
+                                    <td t-esc="user['annual_compassionate_leave_days_balance']"/>
+                                    <td t-esc="user['annual_maternity_leave_days_taken']"/>
+                                    <td t-esc="user['annual_maternity_leave_days_balance']"/>
+                                    <td t-esc="user['annual_other_leave_taken']"/>
+                                    <td t-esc="user['annual_other_leave_balance']"/>
+                                  </tr>
+                                  <!-- update counter  -->
+                                  <t t-set="counter" t-value="counter+1"/>
+                                </t>
+                              </tbody>
+
+                            </table>
+                          </div>
+
+                        </div>
+                    </t>
+                    </t>
+         </t>
+    </template>
+
+
+
+
 </odoo>
