@@ -2980,6 +2980,22 @@ else:
     result = -amount
 """
 
+code_for_40 = """
+
+# this was updated from code
+amount = 0
+if (payslip.create_date.date() - employee.birthday ).days > (55 * 365):
+    amount = payslip.rule_parameter("PAYE_CREDITS_AMOUNT")
+result = amount
+"""
+
+code_for_41 = """
+# This was updated from code
+amount = 0
+if (payslip.create_date.date() - employee.birthday ).days > (55 * 365):
+    amount = payslip.rule_parameter("PAYE_CREDITS_AMOUNT_ZWL")
+result = amount 
+"""
 # Rule categories
 allowable_deduction_category_usd = 18
 allowable_deduction_category_zwl = 19
@@ -3031,6 +3047,15 @@ for rule in rules:
     rule.write({
       "amount_python_compute": code_for_15
     })
+  if rule.id == 40:
+    rule.write({
+      "amount_python_compute": code_for_40
+    })
+  if rule.id == 41:
+    rule.write({
+      "amount_python_compute": code_for_41
+    })
+
       </field>
     </record>
 
